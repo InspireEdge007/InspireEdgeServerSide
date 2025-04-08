@@ -1,0 +1,125 @@
+# Python specific
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.whl
+wheels/
+pip-wheel-metadata/
+*.manifest
+*.spec
+
+# Django specific
+*.log
+*.pot
+*.pyc
+*.mo
+*.migrations/
+*.migrations/**/000*.py
+db.sqlite3
+media/
+staticfiles/
+
+# Environments
+.env
+*.env
+
+# Pytest
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.cache/
+
+# Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.save
+*.sublime-project
+*.sublime-workspace
+
+# Coverage
+.coverage
+.coveragerc
+.cache
+coverage.xml
+nosetests.xml
+coverage/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Logs
+*.log
+*.out
+*.err
+
+# Ignore virtual environment folders
+# Note: If you use a virtual environment for your project, ensure it is ignored.
+venv/
+env/
+.venv/
+ENV/
+
+# Ignore node_modules folder
+node_modules/
+
+# Ignore static files (for collectstatic)
+static/
+staticfiles/
+
+# Ignore translations
+*.mo
+
+# Ignore compiled code
+*.so
+
+# Ignore pytest cache
+.pytest_cache/
+.cache/
+
+# Ignore celery beat schedule file
+celerybeat-schedule
+
+# Ignore other specific folders/files
+**/__pycache__/
+**/cache/
+Dockerfile copy.py
+
+/migrations
+
+../edge_env/
+.env
