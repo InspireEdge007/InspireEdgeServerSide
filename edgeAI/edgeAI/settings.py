@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'account',
+    'rest_framework_simplejwt',
+    'django_otp.plugins.otp_totp'
 ]
 
 MIDDLEWARE = [
@@ -61,7 +63,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-        "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "NON_FIELD_ERRORS_KEY": "errors",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.UserRateThrottle",
@@ -75,6 +77,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 TEMPLATES = [
@@ -146,10 +150,22 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+
+# Optional (for development)
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Required for collectstatic in production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
+AUTHENTICATION_BACKENDS = [
+    'account.backends.EmailAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Fallback
+]
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# AUTH_USER_MODEL = "account.User"
+AUTH_USER_MODEL = "account.User"
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 CELERY_BROKER_URL=f"redis://:{REDIS_PASSWORD}@payroll-redis:6379/0"
