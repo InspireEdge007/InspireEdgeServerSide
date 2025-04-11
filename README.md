@@ -38,12 +38,14 @@ On Windows:
 ```sh
 git clone https://github.com/InspireEdge007/InspireEdgeServerSide.git
 InspireEdgeServerSide
+
 ```
 
 ## Build and run the project using Docker Compose:
 
 ```sh
 docker-compose -f docker-compose-dev.yml up --build -d
+
 ```
 
 ## Execution / Usage
@@ -52,6 +54,7 @@ Once the containers are up, access the Django backend at:
 
 ```sh
 http://localhost:8000/
+
 ```
 
 ## Typical workflow inside the Docker container:
