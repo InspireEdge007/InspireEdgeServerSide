@@ -25,7 +25,9 @@ COPY . /app/
 # ["uvicorn", "swaphub.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 ENV PYTHONPATH="/app/inspire_edge_backend"
 
+WORKDIR /app/inspire_edge_backend/  
 
+CMD gunicorn AI.wsgi:application --bind 0.0.0.0:$PORT
 
 # Expose port 8000
 EXPOSE 8888
