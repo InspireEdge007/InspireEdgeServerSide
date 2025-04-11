@@ -92,10 +92,13 @@ class UserOTP(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     otp_secret = models.CharField(max_length=32)
     otp_verified = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now)
 
     def generate_otp(self):
-        totp = pyotp.TOTP(self.otp_secret)
+        self.otp_verified = False
+        self.created = timezone.now()  # 🔥 THIS LINE updates timestamp!
+        self.save()
+        totp = pyotp.TOTP(self.otp_secret, interval=300)
         return totp.now()
 
     def verify_otp(self, otp_code):

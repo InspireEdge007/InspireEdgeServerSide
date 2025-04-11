@@ -42,6 +42,7 @@ services:
       volumes:
         - ./nginx:/etc/nginx/conf.d
         - ./staticfiles:/app/staticfiles
+        
       depends_on:
         - web
       networks:
