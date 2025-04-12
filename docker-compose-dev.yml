@@ -4,7 +4,8 @@ services:
     build: .
     command: >
       sh -c "
-      python wait_for_db.py &&
+      python wait_for_db.py && python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
       uvicorn AI.asgi:application --host 0.0.0.0 --port 8888 --reload
       "
     volumes:
@@ -42,7 +43,7 @@ services:
       volumes:
         - ./nginx:/etc/nginx/conf.d
         - ./staticfiles:/app/staticfiles
-        
+
       depends_on:
         - web
       networks:
