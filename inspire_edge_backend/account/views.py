@@ -15,13 +15,15 @@ from .serializers import (
 from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
 from django.utils import timezone
+import traceback
 
 
 class RegisterAPIView(APIView):
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
+        try:
+            serializer = UserRegistrationSerializer(data=request.data)
+            if serializer.is_valid():
+
                 user = serializer.save()
 
                 # Generate OTP secret
@@ -45,10 +47,11 @@ class RegisterAPIView(APIView):
                     'email': user.email,
                     'otp_code': otp_code  # Remove this in production - only for testing
                 }, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                return Response( e , status=status.HTTP_500_BAD_REQUEST)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+                print("🔥 EXCEPTION:", traceback.format_exc())  # Logs to Render's log panel
+                return Response({"detail": "Something went wrong. Please try again later."}, status=500)
 
 class ResendOTPAPIView(APIView):
 
