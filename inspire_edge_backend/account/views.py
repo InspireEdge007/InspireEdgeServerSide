@@ -266,7 +266,7 @@ class ForgotPasswordAPIView(APIView):
                         Thanks,
                         The Inspire Edge Team
                         """,
-                        
+
                 from_email="noreply@inspireedge.com",
                 recipient_list=[user.email],
                 fail_silently=False,
@@ -302,9 +302,7 @@ class ResetPasswordAPIView(APIView):
                 return Response({'error': 'OTP record not found for this user.'}, status=status.HTTP_404_NOT_FOUND)
 
             # Verify the OTP using pyotp
-            totp = pyotp.TOTP(user_otp.otp_secret, interval=5000)
-            print(totp)
-            if not totp.verify(otp):
+            if  user_otp.otp_secret != otp:
                 return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Update user password
