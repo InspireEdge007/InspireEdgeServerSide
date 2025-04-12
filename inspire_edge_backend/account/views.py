@@ -21,29 +21,33 @@ class RegisterAPIView(APIView):
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            try:
+                user = serializer.save()
 
-            # Generate OTP secret
-            otp_secret = pyotp.random_base32()
-            UserOTP.objects.create(user=user, otp_secret=otp_secret)
+                # Generate OTP secret
+                otp_secret = pyotp.random_base32()
+                UserOTP.objects.create(user=user, otp_secret=otp_secret)
 
-            # Generate OTP code (in production, send via SMS/email)
-            totp = pyotp.TOTP(otp_secret, interval=300)
-            otp_code = totp.now()
+                # Generate OTP code (in production, send via SMS/email)
+                totp = pyotp.TOTP(otp_secret, interval=300)
+                otp_code = totp.now()
 
-            # send_mail(
-            #     subject="Your new OTP code",
-            #     message=f"Your new OTP is: {otp_code}",
-            #     from_email="noreply@yourdomain.com",
-            #     recipient_list=[user.email],
-            #     fail_silently=False,
-            # )
+                # send_mail(
+                #     subject="Your new OTP code",
+                #     message=f"Your new OTP is: {otp_code}",
+                #     from_email="noreply@yourdomain.com",
+                #     recipient_list=[user.email],
+                #     fail_silently=False,
+                # )
 
-            return Response({
-                'message': 'User registered successfully. Please verify OTP',
-                'email': user.email,
-                'otp_code': otp_code  # Remove this in production - only for testing
-            }, status=status.HTTP_201_CREATED)
+                return Response({
+                    'message': 'User registered successfully. Please verify OTP',
+                    'email': user.email,
+                    'otp_code': otp_code  # Remove this in production - only for testing
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response( e , status=status.HTTP_500_BAD_REQUEST)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ResendOTPAPIView(APIView):
