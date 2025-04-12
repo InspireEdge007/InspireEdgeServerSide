@@ -10,7 +10,7 @@ def custom_exception_handler(exc, context):
             'status_code': response.status_code,
             'detail': response.data
         }, status=response.status_code)
-
+    
     return Response({
         'status_code': status.HTTP_500_INTERNAL_SERVER_ERROR,
         'detail': 'Something went wrong. Please try again later.'
