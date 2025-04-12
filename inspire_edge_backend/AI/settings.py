@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from dotenv import load_dotenv
 from pathlib import Path
+import dj_database_url
 from datetime import timedelta
 
 import os
@@ -103,15 +104,22 @@ WSGI_APPLICATION = "AI.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": os.getenv("DB_NAME"),
+#             "USER": os.getenv("DB_USER"),
+#             "PASSWORD": os.getenv("DB_PASSWORD"),
+#             "HOST": "db",
+#             "PORT": "5432",
+#         }
+# }
+default_db = os.getenv("DATABASE_URL")
+if not default_db:
+    default_db = f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
+
 DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
-            "HOST": "db",
-            "PORT": "5432",
-        }
+    "default": dj_database_url.parse(default_db, conn_max_age=600, conn_health_checks=True)
 }
 
 
