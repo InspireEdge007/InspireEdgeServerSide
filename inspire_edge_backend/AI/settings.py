@@ -116,7 +116,7 @@ WSGI_APPLICATION = "AI.wsgi.application"
 # }
 default_db = os.getenv("DATABASE_URL")
 if not default_db:
-    default_db = f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
+    default_db = f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
 
 DATABASES = {
     "default": dj_database_url.parse(default_db, conn_max_age=600, conn_health_checks=True)
