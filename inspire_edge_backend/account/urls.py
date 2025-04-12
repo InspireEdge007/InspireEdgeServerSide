@@ -22,10 +22,8 @@ urlpatterns = [
 
     path('admin-dashboard', AdminDashboardAPIView.as_view(), name='admin-dashboard'),
     path('profile', UserProfileAPIView.as_view(), name='user-profile'),
-    
+
     path('forgot-password/', ForgotPasswordAPIView.as_view(), name='forgot-password'),
-    # path('reset-password/<uidb64>/<token>/', ResetPasswordAPIView.as_view(), name='reset-password'),
-    # path('reset-password/<otp>/', ResetPasswordAPIView.as_view(), name='reset-password'),
     path('reset-password/', ResetPasswordAPIView.as_view(), name='reset-password')
 
  ]
