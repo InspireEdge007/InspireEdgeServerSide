@@ -1,7 +1,7 @@
 # Inspire Edge
 
 - ![coverage](https://img.shields.io/badge/coverage-80%25-yellowgreen)
-- ![version](https://img.shields.io/badge/version-1.2.3-blue)
+- ![version](https://img.shields.io/badge/version-1.0.0-blue)
 - [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
 Inspire Edge is a scalable Django REST Framework project fully containerized with Docker, designed for high-performance API delivery.
@@ -105,7 +105,7 @@ Inspire Edge currently has the following set of features:
 - Divine – [@DivineTwitter](https://twitter.com/username)
 - EseVic – [@EseVicTwitter](https://twitter.com/chantelvic)
 
-The < project's name > development team really appreciates and thanks the time and effort that all these fellows have put into the project's growth and improvement.
+The Inspire Edge development team really appreciates and thanks the time and effort that all these fellows have put into the project's growth and improvement.
 
 ## Author
 

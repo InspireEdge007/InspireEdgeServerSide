@@ -17,6 +17,25 @@ from datetime import timedelta
 from django.utils import timezone
 import traceback
 
+# password auth
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.mail import send_mail
+import pyotp
+from .models import User, UserOTP
+
+# from django.contrib.auth.tokens import default_token_generator
+# from django.contrib.auth import get_user_model
+# from django.core.mail import send_mail
+# from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+# from django.template.loader import render_to_string
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from rest_framework import status
+# from django.contrib.auth.forms import PasswordResetForm
+# from django.contrib.auth.forms import SetPasswordForm
+
 
 class RegisterAPIView(APIView):
     def post(self, request):
@@ -214,3 +233,100 @@ class UserProfileAPIView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+
+class ForgotPasswordAPIView(APIView):
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            if not email:
+                return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Always generate and save a new OTP secret
+            otp_secret = pyotp.random_base32()
+            
+             # Generate OTP
+            totp = pyotp.TOTP(otp_secret, interval=5000)  
+            otp_code = totp.now()
+            user_otp, _ = UserOTP.objects.get_or_create(user=user)
+            user_otp.otp_secret = otp_code
+            user_otp.save()
+
+           
+
+            # Send email
+            send_mail(
+                subject="Inspire Edge Password Reset OTP",
+                message=f"""
+Hello {user.first_name or 'there'},
+
+You requested a password reset on Inspire Edge.
+
+Your OTP code is: {otp_code}
+
+This OTP is valid for 5 minutes.
+
+If you did not request this, please ignore this email.
+
+Thanks,
+The Inspire Edge Team
+""",
+                from_email="noreply@inspireedge.com",
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+            return Response({'message': 'OTP has been sent to your email.'}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)  
+            return Response({'error': 'Something went wrong. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResetPasswordAPIView(APIView):
+    def post(self, request):
+        try:
+            # Get parameters from request body
+            email = request.data.get('email')
+            otp = request.data.get('otp')
+            password = request.data.get('password')
+
+            # Validate inputs
+            if not all([email, otp, password]):
+                return Response({'error': 'Email, OTP, and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Retrieve user by email
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Retrieve OTP record for the user
+            user_otp = UserOTP.objects.filter(user=user).first()
+            if not user_otp:
+                return Response({'error': 'OTP record not found for this user.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Verify the OTP using pyotp
+            totp = pyotp.TOTP(user_otp.otp_secret, interval=5000)
+            print(totp)
+            if not totp.verify(otp):
+                return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Update user password
+            user.set_password(password)
+            user.save()
+
+            # Optionally, delete the OTP record after successful password reset
+            user_otp.delete()
+
+            return Response({'message': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)  
+            return Response({'error': f'{e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
