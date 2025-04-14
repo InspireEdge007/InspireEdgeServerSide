@@ -37,6 +37,11 @@ class UserManager(BaseUserManager):
 # 👤 Custom User Model
 # -------------------------------
 class User(AbstractUser):
+    USER_TYPE_CHOICES = (
+        ('free', 'Free'),
+        ('paid', 'Paid'),
+    )
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='free')
     username = None  # disable username field
     email = models.EmailField(_('email address'), unique=True)
 
