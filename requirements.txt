@@ -224,3 +224,8 @@ uvicorn==0.32.0
 vine==5.1.0
 virtualenv==20.27.1
 wcwidth==0.2.13
+social-auth-app-django==5.4.1
+django-allauth==0.63.6
+dj-rest-auth==6.0.0
+
+

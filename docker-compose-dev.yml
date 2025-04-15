@@ -1,13 +1,9 @@
 services:
-
   web:
     build: .
     command: >
       sh -c "
       python wait_for_db.py &&
-      python manage.py makemigrations &&
-      python manage.py migrate &&
-      python manage.py collectstatic --noinput &&
       uvicorn AI.asgi:application --host 0.0.0.0 --port 8888 --reload
       "
     volumes:
@@ -36,20 +32,19 @@ services:
     networks:
       - AI-network
 
-
   nginx:
-      container_name: AI_nginx
-      image: nginx:1.19
-      ports:
-        - "80:80"
-      volumes:
-        - ./nginx:/etc/nginx/conf.d
-        - ./staticfiles:/app/staticfiles
+    container_name: AI_nginx
+    image: nginx:1.19
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - ./staticfiles:/app/staticfiles
 
-      depends_on:
-        - web
-      networks:
-        - AI-network
+    depends_on:
+      - web
+    networks:
+      - AI-network
 
   redis:
     container_name: AI_redis
@@ -99,8 +94,6 @@ services:
       - celery
     networks:
       - AI-network
-
-
 
 volumes:
   AI-postgres-data:
