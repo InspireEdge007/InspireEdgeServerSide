@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-import pyotp  # Changed from django_otp to pyotp
+import pyotp 
 import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
@@ -16,10 +16,18 @@ from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
 from django.utils import timezone
 import traceback
+
+# password auth
+from rest_framework import status
 from django.core.mail import send_mail
+import pyotp
+from .models import User, UserOTP
 
-
-
+# Google auth
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from .serializers import GoogleLoginSerializer
 
 
 class RegisterAPIView(APIView):
@@ -219,8 +227,6 @@ class UserProfileAPIView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
-
-
 class ForgotPasswordAPIView(APIView):
     def post(self, request):
         try:
@@ -273,7 +279,6 @@ class ForgotPasswordAPIView(APIView):
             print(e)
             return Response({'error': 'Something went wrong. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class ResetPasswordAPIView(APIView):
     def post(self, request):
         try:
@@ -312,4 +317,28 @@ class ResetPasswordAPIView(APIView):
         except Exception as e:
             print(e)
             return Response({'error': f'{e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
- 
+        
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    serializer_class = GoogleLoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            print("Received Google login POST request")
+            print("Request data:", request.data)
+        
+            
+            response = super().post(request, *args, **kwargs)
+            user = self.request.user
+            return Response({
+                "access": response.data["access"],
+                "refresh": response.data["refresh"],
+                "user": {
+                    "email": user.email,
+                    "id": user.id,
+                }
+            })
+        except Exception as e:
+            print("Error in GoogleLoginView:", str(e))
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    

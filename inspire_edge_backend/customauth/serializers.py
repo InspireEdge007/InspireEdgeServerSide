@@ -8,7 +8,8 @@ from rest_framework import serializers
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import User
+from dj_rest_auth.registration.serializers import SocialLoginSerializer
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -59,7 +60,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 class OTPSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
-    email = serializers.EmailField(required=False)  # For login OTP verification
+    email = serializers.EmailField(required=False) 
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -92,3 +93,6 @@ class ForgotPasswordSerializer(serializers.Serializer):
 class ResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=6)
     
+
+class GoogleLoginSerializer(SocialLoginSerializer):
+    pass
