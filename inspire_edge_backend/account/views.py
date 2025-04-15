@@ -16,14 +16,9 @@ from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
 from django.utils import timezone
 import traceback
-
-# password auth
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from django.core.mail import send_mail
-import pyotp
-from .models import User, UserOTP
+
+
 
 
 
@@ -317,5 +312,4 @@ class ResetPasswordAPIView(APIView):
         except Exception as e:
             print(e)
             return Response({'error': f'{e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+ 
