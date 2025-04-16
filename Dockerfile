@@ -22,9 +22,9 @@ COPY . /app/
 
 ENV PYTHONPATH="/app/inspire_edge_backend"
 
-# WORKDIR /app/inspire_edge_backend/  
+WORKDIR /app/inspire_edge_backend/
 
-# CMD gunicorn AI.wsgi:application --bind 0.0.0.0:$PORT
+CMD gunicorn AI.wsgi:application --bind 0.0.0.0:$PORT
 
 # Expose port 8000
 EXPOSE 8888
