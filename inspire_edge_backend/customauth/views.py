@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-import pyotp  # Changed from django_otp to pyotp
+import pyotp 
 import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
@@ -18,23 +18,16 @@ from django.utils import timezone
 import traceback
 
 # password auth
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
 import pyotp
 from .models import User, UserOTP
 
-# from django.contrib.auth.tokens import default_token_generator
-# from django.contrib.auth import get_user_model
-# from django.core.mail import send_mail
-# from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-# from django.template.loader import render_to_string
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status
-# from django.contrib.auth.forms import PasswordResetForm
-# from django.contrib.auth.forms import SetPasswordForm
+# Google auth
+from dj_rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from .serializers import GoogleLoginSerializer
 
 
 class RegisterAPIView(APIView):
@@ -234,48 +227,47 @@ class UserProfileAPIView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
-
-
 class ForgotPasswordAPIView(APIView):
     def post(self, request):
         try:
             email = request.data.get('email')
             if not email:
                 return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
             user = User.objects.filter(email=email).first()
             if not user:
                 return Response({'error': 'User with this email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
             # Always generate and save a new OTP secret
             otp_secret = pyotp.random_base32()
-            
+
              # Generate OTP
-            totp = pyotp.TOTP(otp_secret, interval=5000)  
+            totp = pyotp.TOTP(otp_secret, interval=5000)
             otp_code = totp.now()
             user_otp, _ = UserOTP.objects.get_or_create(user=user)
             user_otp.otp_secret = otp_code
             user_otp.save()
 
-           
+
 
             # Send email
             send_mail(
                 subject="Inspire Edge Password Reset OTP",
                 message=f"""
-                                Hello {user.first_name or 'there'},
+                        Hello {user.first_name or 'there'},
 
-                                You requested a password reset on Inspire Edge.
+                        You requested a password reset on Inspire Edge.
 
-                                Your OTP code is: {otp_code}
+                        Your OTP code is: {otp_code}
 
-                                This OTP is valid for 5 minutes.
+                        This OTP is valid for 5 minutes.
 
-                                If you did not request this, please ignore this email.
+                        If you did not request this, please ignore this email.
 
-                                Thanks,
-                                The Inspire Edge Team
-                                """,
+                        Thanks,
+                        The Inspire Edge Team
+                        """,
+
                 from_email="noreply@inspireedge.com",
                 recipient_list=[user.email],
                 fail_silently=False,
@@ -284,9 +276,8 @@ class ForgotPasswordAPIView(APIView):
             return Response({'message': 'OTP has been sent to your email.'}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            print(e)  
+            print(e)
             return Response({'error': 'Something went wrong. Please try again later.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class ResetPasswordAPIView(APIView):
     def post(self, request):
@@ -313,7 +304,7 @@ class ResetPasswordAPIView(APIView):
             # Verify the OTP using pyotp
             if  user_otp.otp_secret != otp:
                 return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
-                
+
             # Update user password
             user.set_password(password)
             user.save()
@@ -324,7 +315,30 @@ class ResetPasswordAPIView(APIView):
             return Response({'message': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            print(e)  
+            print(e)
             return Response({'error': f'{e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    serializer_class = GoogleLoginSerializer
 
-
+    def post(self, request, *args, **kwargs):
+        try:
+            print("Received Google login POST request")
+            print("Request data:", request.data)
+        
+            
+            response = super().post(request, *args, **kwargs)
+            user = self.request.user
+            return Response({
+                "access": response.data["access"],
+                "refresh": response.data["refresh"],
+                "user": {
+                    "email": user.email,
+                    "id": user.id,
+                }
+            })
+        except Exception as e:
+            print("Error in GoogleLoginView:", str(e))
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    
