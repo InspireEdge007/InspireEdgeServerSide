@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from dotenv import load_dotenv
 from pathlib import Path
+import dj_database_url
 from datetime import timedelta
 import os
 
@@ -34,7 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "customauth.apps.CustomAuthConfig",  
+    "customauth.apps.CustomAuthConfig",
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework.authtoken",
@@ -78,16 +79,12 @@ TEMPLATES = [
 WSGI_APPLICATION = "AI.wsgi.application"
 
 # Database
+default_db = os.getenv("DATABASE_URL")
+if not default_db:
+    default_db = f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
-}
+    "default": dj_database_url.parse(default_db, conn_max_age=600, conn_health_checks=True)}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -119,10 +116,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Authentication
-AUTH_USER_MODEL = "customauth.User"  
+AUTH_USER_MODEL = "customauth.User"
 AUTHENTICATION_BACKENDS = [
-    "allauth.account.auth_backends.AuthenticationBackend",  
-    "customauth.backends.EmailAuthBackend",  
+    "allauth.account.auth_backends.AuthenticationBackend",
+    "customauth.backends.EmailAuthBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 
@@ -164,7 +161,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {"anon": "30/minute", "user": "70/minute"},
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 5,
-    "EXCEPTION_HANDLER": "customauth.utils.custom_exception_handler",  
+    "EXCEPTION_HANDLER": "customauth.utils.custom_exception_handler",
 }
 
 # JWT
