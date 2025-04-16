@@ -20,14 +20,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . /app/
 
-# Run Django tests using pytest and coverage
-# CMD ["python","manage.py", "migrate", "&&", "python", "manage.py", "collectstatic","&&", "uvicorn", "swaphub.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-# ["uvicorn", "swaphub.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 ENV PYTHONPATH="/app/inspire_edge_backend"
 
-WORKDIR /app/inspire_edge_backend/  
+# WORKDIR /app/inspire_edge_backend/  
 
-CMD gunicorn AI.wsgi:application --bind 0.0.0.0:$PORT
+# CMD gunicorn AI.wsgi:application --bind 0.0.0.0:$PORT
 
 # Expose port 8000
 EXPOSE 8888
