@@ -122,6 +122,9 @@ Dockerfile copy.py
 /migrations
 .env
 customauth/*migrations
+shopify_integration/*migrations
+
 inspire_edge_backend/customauth/*migrations
+inspire_edge_backend/shopify_integration/*migrations
 old things/
 env/
