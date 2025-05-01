@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "customauth.apps.CustomAuthConfig",
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework.authtoken",
@@ -46,6 +45,9 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
+    "customauth.apps.CustomAuthConfig",
+    "django_celery_beat",
+    "shopify_integration"
 ]
 
 MIDDLEWARE = [
@@ -178,6 +180,7 @@ SIMPLE_JWT = {
 # Celery
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 CELERY_BROKER_URL = f"redis://:{REDIS_PASSWORD}@redis:6379/0"
+CELERY_RESULT_BACKEND = f"redis://:{REDIS_PASSWORD}@redis:6379/0"
 
 # Email
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
@@ -187,3 +190,9 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
+
+SHOPIFY_API_KEY = 'afbe3a1a42718af3d118b26ecb6ee44c'
+SHOPIFY_API_SECRET = '90477a32139476c12e433a9cdb9260c3'
+SHOPIFY_SCOPES = 'read_products,write_products'
+SHOPIFY_REDIRECT_URI = 'https://inspireedgebackend.onrender.com/shopify/callback/'
