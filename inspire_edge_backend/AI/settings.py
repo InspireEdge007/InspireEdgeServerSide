@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "customauth.apps.CustomAuthConfig",
-    "django_celery_beat",
+    # "djangocelery_beat",
     "shopify_integration"
 ]
 

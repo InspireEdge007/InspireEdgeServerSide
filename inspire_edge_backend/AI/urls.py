@@ -21,6 +21,6 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('customauth/', include("customauth.urls")),
-    path('shopify', include("shopify_integration.urls")),
+    path('shopify/', include("shopify_integration.urls")),
 
 ]

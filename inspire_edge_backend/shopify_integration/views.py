@@ -11,6 +11,7 @@ User = get_user_model()
 
 # Step 1: Generate OAuth redirect URL
 class ShopifyAuthRedirectView(APIView):
+    
     def get(self, request):
         shop = request.query_params.get("shop")
         if not shop:
