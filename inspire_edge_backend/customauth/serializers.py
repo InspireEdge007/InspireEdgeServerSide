@@ -8,6 +8,7 @@ from datetime import timedelta
 from .models import User
 from .tasks import downgrade_user_task
 
+
 from rest_framework import serializers
 
 from django.contrib.auth.password_validation import validate_password
@@ -62,6 +63,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         # Schedule downgrade task 14 days later
         downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+
         return user
 
 class UserLoginSerializer(serializers.Serializer):
@@ -80,6 +82,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 class OTPSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
+
     email = serializers.EmailField(required=False)
 
 class RoleSerializer(serializers.ModelSerializer):

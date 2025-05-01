@@ -23,4 +23,5 @@ urlpatterns = [
     path('customauth/', include("customauth.urls")),
     path('shopify/', include("shopify_integration.urls")),
 
+
 ]
