@@ -5,14 +5,15 @@ from urllib.parse import urlencode
 from rest_framework.permissions import IsAuthenticated
 import requests
 
+from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
+
+import base64
 
 User = get_user_model()
 
 # Step 1: Generate OAuth redirect URL
-from rest_framework_simplejwt.tokens import RefreshToken
-import base64
 
 class ShopifyAuthRedirectView(APIView):
     permission_classes = [IsAuthenticated]
