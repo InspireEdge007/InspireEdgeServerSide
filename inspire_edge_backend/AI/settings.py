@@ -24,7 +24,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "True") == "True"
-
 ALLOWED_HOSTS = ["*"]
 
 # Application definition
@@ -48,6 +47,7 @@ INSTALLED_APPS = [
     "customauth.apps.CustomAuthConfig",
     # "djangocelery_beat",
     "shopify_integration"
+
 ]
 
 MIDDLEWARE = [
@@ -84,6 +84,7 @@ WSGI_APPLICATION = "AI.wsgi.application"
 # Database
 default_db = os.getenv("DATABASE_URL")
 if not default_db:
+
     default_db = f"postgres://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}"
 
 DATABASES = {
@@ -114,7 +115,6 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = "static/"
-
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
@@ -190,9 +190,8 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-
-
 SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY")
 SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET")
 SHOPIFY_SCOPES = os.getenv("SHOPIFY_SCOPES")
 SHOPIFY_REDIRECT_URI = os.getenv("SHOPIFY_REDIRECT_URI")
+

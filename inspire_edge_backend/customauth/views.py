@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 import pyotp
+
 import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
@@ -38,6 +39,7 @@ class RegisterAPIView(APIView):
             if serializer.is_valid():
 
                 user = serializer.save()
+
                 user.start_trial()
 
                 # Schedule downgrade in 14 days
@@ -350,7 +352,6 @@ class GoogleLogin(SocialLoginView):
         try:
             print("Received Google login POST request")
             print("Request data:", request.data)
-
 
             response = super().post(request, *args, **kwargs)
             user = self.request.user

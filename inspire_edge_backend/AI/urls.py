@@ -25,6 +25,7 @@ urlpatterns = [
     path('customauth/', include("customauth.urls")),
     path('shopify/', include("shopify_integration.urls")),
 
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
