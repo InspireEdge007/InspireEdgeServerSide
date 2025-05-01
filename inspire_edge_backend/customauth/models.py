@@ -1,4 +1,5 @@
-# inspire_edge_backend/customauth/models.py
+from datetime import timedelta
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
@@ -25,12 +26,26 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class User(AbstractUser):
+    TIER_CHOICES = (
+        ('basic', 'Basic'),
+        ('pro', 'Pro'),
+        ('enterprise', 'Enterprise'),
+    )
     username = None
     email = models.EmailField(_('email address'), unique=True)
+
+
     is_verified = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    tier = models.CharField(max_length=10, choices=TIER_CHOICES, default='basic')
+    trial_start = models.DateTimeField(null=True, blank=True)
+    trial_end = models.DateTimeField(null=True, blank=True)
+    trial_used = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False)  # True if user has upgraded/purchased
+    subscription_end = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = UserManager()
@@ -41,6 +56,33 @@ class User(AbstractUser):
     @property
     def roles(self):
         return self.userrole_set.select_related('role').values_list('role__name', flat=True)
+
+    def start_trial(self):
+        if not self.trial_used:
+            self.tier = 'pro'
+            self.trial_start = timezone.now()
+            self.trial_end = timezone.now() + timedelta(days=14)
+            self.trial_used = True
+            self.save()
+
+    def activate_paid_subscription(self, months=1, tier='pro'):
+        self.tier = tier
+        self.is_paid = True
+        if self.subscription_end and self.subscription_end > timezone.now():
+            self.subscription_end += timedelta(days=30 * months)
+        else:
+            self.subscription_end = timezone.now() + timedelta(days=30 * months)
+        self.save()
+
+    def downgrade_if_expired(self):
+        now = timezone.now()
+        if self.trial_end and not self.is_paid and self.trial_end <= now:
+            self.tier = 'basic'
+            self.save()
+        elif self.subscription_end and self.subscription_end <= now:
+            self.tier = 'basic'
+            self.is_paid = False
+            self.save()
 
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -80,4 +122,11 @@ class UserOTP(models.Model):
             return True
         return False
     def __str__(self):
+
         return f"OTP for {self.user.email}"
+
+class PaymentType(models.Model):
+    name = models.CharField(max_length=100)
+    tier = models.CharField(max_length=20, choices=User.TIER_CHOICES)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    features = models.TextField()

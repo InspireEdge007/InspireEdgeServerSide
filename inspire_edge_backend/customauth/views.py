@@ -1,11 +1,11 @@
-from httpx import delete
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-import pyotp 
+import pyotp
+
 import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
@@ -16,6 +16,8 @@ from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
 from django.utils import timezone
 import traceback
+
+from customauth.tasks import downgrade_user_task
 
 # password auth
 from rest_framework import status
@@ -38,6 +40,11 @@ class RegisterAPIView(APIView):
 
                 user = serializer.save()
 
+                user.start_trial()
+
+                # Schedule downgrade in 14 days
+                downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+
                 # Generate OTP secret
                 otp_secret = pyotp.random_base32()
                 UserOTP.objects.create(user=user, otp_secret=otp_secret)
@@ -45,14 +52,6 @@ class RegisterAPIView(APIView):
                 # Generate OTP code (in production, send via SMS/email)
                 totp = pyotp.TOTP(otp_secret, interval=300)
                 otp_code = totp.now()
-
-                # send_mail(
-                #     subject="Your new OTP code",
-                #     message=f"Your new OTP is: {otp_code}",
-                #     from_email="noreply@yourdomain.com",
-                #     recipient_list=[user.email],
-                #     fail_silently=False,
-                # )
 
                 return Response({
                     'message': 'User registered successfully. Please verify OTP',
@@ -227,6 +226,33 @@ class UserProfileAPIView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+class SubscriptionPaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        tier = request.data.get('tier')
+        months = int(request.data.get('months', 1))
+
+        # Validate tier
+        valid_tiers = ['pro', 'enterprise']
+        if tier not in valid_tiers:
+            return Response({'error': 'Invalid tier.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # TODO: Verify payment here (e.g. call Paystack/Flutterwave API)
+
+        # Activate subscription
+        user.activate_paid_subscription(months=months, tier=tier)
+
+        # Schedule downgrade
+        from your_app.tasks import downgrade_user_task
+        downgrade_user_task.apply_async(args=[user.id], eta=user.subscription_end)
+
+        return Response({
+            'message': f'{tier.capitalize()} plan activated for {months} month(s).',
+            'subscription_end': user.subscription_end,
+        }, status=status.HTTP_200_OK)
+
 class ForgotPasswordAPIView(APIView):
     def post(self, request):
         try:
@@ -317,7 +343,7 @@ class ResetPasswordAPIView(APIView):
         except Exception as e:
             print(e)
             return Response({'error': f'{e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
     serializer_class = GoogleLoginSerializer
@@ -326,8 +352,7 @@ class GoogleLogin(SocialLoginView):
         try:
             print("Received Google login POST request")
             print("Request data:", request.data)
-        
-            
+
             response = super().post(request, *args, **kwargs)
             user = self.request.user
             return Response({
@@ -341,4 +366,3 @@ class GoogleLogin(SocialLoginView):
         except Exception as e:
             print("Error in GoogleLoginView:", str(e))
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    

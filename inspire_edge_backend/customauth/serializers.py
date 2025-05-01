@@ -3,6 +3,11 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, Role, UserRole, UserOTP
 import pyotp
+from django.utils import timezone
+from datetime import timedelta
+from .models import User
+from .tasks import downgrade_user_task
+
 
 from rest_framework import serializers
 
@@ -22,7 +27,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'first_name': {'required': False},
             'last_name': {'required': False},
             'phone_number': {'required': False},
+            'password': {'write_only': True},
         }
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value, trial_used=True).exists():
+            raise serializers.ValidationError("Trial has already been used for this email.")
+        return value
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -41,7 +52,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password2', None)
         user = User(**validated_data)
         user.set_password(password)
+
+        # Assign pro tier and trial dates
+        now = timezone.now()
+        user.tier = 'pro'
+        user.trial_start = now
+        user.trial_end = now + timedelta(days=14)
+        user.trial_used = True
         user.save()
+
+        # Schedule downgrade task 14 days later
+        downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+
         return user
 
 class UserLoginSerializer(serializers.Serializer):
@@ -60,7 +82,8 @@ class UserLoginSerializer(serializers.Serializer):
 
 class OTPSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
-    email = serializers.EmailField(required=False) 
+
+    email = serializers.EmailField(required=False)
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -84,15 +107,12 @@ class JWTSerializer(serializers.Serializer):
     access = serializers.CharField()
     refresh = serializers.CharField()
     user = UserSerializer()
-    
-    
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 class ResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=6)
-    
 
 class GoogleLoginSerializer(SocialLoginSerializer):
     pass
