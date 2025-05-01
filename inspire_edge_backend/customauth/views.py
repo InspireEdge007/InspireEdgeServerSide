@@ -243,7 +243,7 @@ class SubscriptionPaymentAPIView(APIView):
         user.activate_paid_subscription(months=months, tier=tier)
 
         # Schedule downgrade
-        from your_app.tasks import downgrade_user_task
+        
         downgrade_user_task.apply_async(args=[user.id], eta=user.subscription_end)
 
         return Response({
