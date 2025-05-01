@@ -121,7 +121,7 @@ Dockerfile copy.py
 
 /migrations
 .env
-account/*migrations
-inspire_edge_backend/account/*migrations
+customauth/*migrations
+inspire_edge_backend/customauth/*migrations
 old things/
 env/
