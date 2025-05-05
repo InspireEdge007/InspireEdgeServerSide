@@ -10,6 +10,7 @@ from .models import ShopifyStore
 from django.contrib.auth import get_user_model
 from .utils import amazon_products
 import base64
+import json
 
 User = get_user_model()
 
@@ -100,6 +101,8 @@ class FetchProductsView(APIView):
                 headers=headers
             )
             products = response.json().get("products", [])
+            with open("products.json", "w") as file:
+                json.dump(response.read(), file, indent= 4)
 
 class CompareProductsView(APIView):
 

@@ -6,5 +6,6 @@ from .views import ShopifyAuthRedirectView, ShopifyCallbackView, CompareProducts
 urlpatterns = [
     path('auth', ShopifyAuthRedirectView.as_view(), name='shopify-auth'),
     path('callback', ShopifyCallbackView.as_view(), name='shopify-callback'),
+    path('fetch-products', ShopifyCallbackView.as_view(), name='shopify-products'),
     path('compare', CompareProductsView.as_view(), name='shopify-compare'),
 ]
