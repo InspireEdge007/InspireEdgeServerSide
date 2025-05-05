@@ -8,12 +8,10 @@ import requests
 from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
-
+from .utils import amazon_products
 import base64
 
 User = get_user_model()
-
-# Step 1: Generate OAuth redirect URL
 
 class ShopifyAuthRedirectView(APIView):
     permission_classes = [IsAuthenticated]
@@ -37,8 +35,6 @@ class ShopifyAuthRedirectView(APIView):
         redirect_url = f"https://{shop}/admin/oauth/authorize?" + urlencode(params)
         return Response({"url": redirect_url})
 
-
-# Step 2: Handle callback and save token
 class ShopifyCallbackView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -87,3 +83,63 @@ class ShopifyCallbackView(APIView):
             return Response({"message": "Shop connected!", "shop": shop})
 
         return Response({"error": "Failed to get access token"}, status=400)
+
+class FetchProductsView(APIView):
+
+    def get(self, request):
+
+        stores = ShopifyStore.objects.all()
+
+        for store in stores:
+            headers = {
+                "X-Shopify-Access-Token": store.access_token,
+                "Content-Type": "application/json"
+            }
+            response = requests.get(
+                f"https://{store.shop_domain}/admin/api/2023-04/products.json",
+                headers=headers
+            )
+            products = response.json().get("products", [])
+
+class CompareProductsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        shop = request.query_params.get("shop")
+        shopify_product_id = request.query_params.get("shopify_product_id")
+        # external_product_url = request.query_params.get("external_url")
+
+        # Fetch from Shopify (connected)
+        shopify_store = ShopifyStore.objects.get(shop_domain=shop)
+        headers = {
+            "X-Shopify-Access-Token": shopify_store.access_token
+        }
+        shopify_res = requests.get(
+            f"https://{shop}/admin/api/2023-10/products/{shopify_product_id}.json",
+            headers=headers
+        )
+        shopify_product = shopify_res.json()["product"]
+
+        # Fetch from external source (Amazon, WooCommerce, etc.)
+        external_product = amazon_products(shopify_product["title"])
+
+        # Compare logic (simplified)
+        result = {
+            "title_match": shopify_product["title"] == external_product["title"],
+            "price_diff": float(shopify_product["variants"][0]["price"]) - float(external_product["price"]),
+            "shopify": shopify_product,
+            "external": external_product,
+        }
+
+        return Response(result)
+
+    def fetch_external_product(url):
+    # Placeholder: fetch from Amazon, WooCommerce, etc.
+        return {
+            "title": "Sample Product",
+            "price": "42.00",
+            "sku": "ABC123"
+        }
+
+
