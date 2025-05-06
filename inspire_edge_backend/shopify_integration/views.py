@@ -15,10 +15,11 @@ import json
 User = get_user_model()
 
 class ShopifyAuthRedirectView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         shop = request.query_params.get("shop")
+        print(shop)
         if not shop:
             return Response({"error": "Missing shop parameter"}, status=400)
 
@@ -38,7 +39,7 @@ class ShopifyAuthRedirectView(APIView):
 
 class ShopifyCallbackView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         code = request.GET.get("code")
@@ -90,6 +91,7 @@ class FetchProductsView(APIView):
     def get(self, request):
 
         stores = ShopifyStore.objects.all()
+        print(stores)
 
         for store in stores:
             headers = {
@@ -102,7 +104,7 @@ class FetchProductsView(APIView):
             )
             products = response.json().get("products", [])
             with open("products.json", "w") as file:
-                json.dump(response.read(), file, indent= 4)
+                json.dump(products, file, indent= 4)
 
 class CompareProductsView(APIView):
 
@@ -115,6 +117,8 @@ class CompareProductsView(APIView):
 
         # Fetch from Shopify (connected)
         shopify_store = ShopifyStore.objects.get(shop_domain=shop)
+
+        print(shopify_store)
         headers = {
             "X-Shopify-Access-Token": shopify_store.access_token
         }
@@ -124,8 +128,11 @@ class CompareProductsView(APIView):
         )
         shopify_product = shopify_res.json()["product"]
 
+
         # Fetch from external source (Amazon, WooCommerce, etc.)
         external_product = amazon_products(shopify_product["title"])
+
+        print(external_product)
 
         # Compare logic (simplified)
         result = {
