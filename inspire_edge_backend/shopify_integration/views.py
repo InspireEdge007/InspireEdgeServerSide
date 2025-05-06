@@ -106,6 +106,9 @@ class FetchProductsView(APIView):
             with open("products.json", "w") as file:
                 json.dump(products, file, indent= 4)
 
+
+        return Response({"message": "Products fetched!", **products})
+
 class CompareProductsView(APIView):
 
     permission_classes = [IsAuthenticated]
