@@ -8,4 +8,7 @@ urlpatterns = [
     path('callback', ShopifyCallbackView.as_view(), name='shopify-callback'),
     path('fetch-products', FetchProductsView.as_view(), name='shopify-products'),
     path('compare', CompareProductsView.as_view(), name='shopify-compare'),
+
+    # woocommerce
+    
 ]
