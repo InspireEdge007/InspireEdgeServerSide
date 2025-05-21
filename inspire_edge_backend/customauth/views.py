@@ -11,7 +11,6 @@ from .models import User, Role, UserRole, UserOTP
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer,
     OTPSerializer, RoleSerializer, UserRoleSerializer, UserSerializer, 
-    BusinessProfileSerializer
 )
 from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
@@ -31,13 +30,6 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from .serializers import GoogleLoginSerializer
-
-# business
-from rest_framework import generics, permissions
-from .models import BusinessProfile
-from .serializers import BusinessProfileSerializer
-from django.utils import timezone
-from datetime import timedelta
     
 
 class RegisterAPIView(APIView):

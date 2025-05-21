@@ -3,6 +3,8 @@ from django.utils import timezone
 from .models import User
 
 
+
+
 @shared_task
 def downgrade_user_task(user_id):
     try:

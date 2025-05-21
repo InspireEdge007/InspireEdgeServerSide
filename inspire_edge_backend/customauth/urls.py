@@ -7,11 +7,7 @@ from customauth.views import (
     RoleListCreateAPIView, AssignRoleAPIView,
     AdminDashboardAPIView, UserProfileAPIView, ResendOTPAPIView,
     ForgotPasswordAPIView, ResetPasswordAPIView,
-<<<<<<< Updated upstream
     GoogleLogin,SubscriptionPaymentAPIView
-=======
-    GoogleLogin, BusinessProfileCreateView, 
->>>>>>> Stashed changes
 )
 
 urlpatterns = [
@@ -34,10 +30,8 @@ urlpatterns = [
 
     path("admin-dashboard", AdminDashboardAPIView.as_view(), name="admin-dashboard"),
     path("profile", UserProfileAPIView.as_view(), name="user-profile"),
-    # business url
-    path('submit-business-profile/', BusinessProfileCreateView.as_view(), name='submit-business-profile'),
-    # path('webhooks/stripe/', stripe_webhook_view, name='stripe-webhook'),
-
+   
+   
 ]
 
 

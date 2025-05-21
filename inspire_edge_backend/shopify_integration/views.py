@@ -9,14 +9,37 @@ from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
 
+# using fbv
+from rest_framework.decorators import api_view, permission_classes
+
+
+
+# woo and big commerce integration
+from shopify_integration.models import *
+from rest_framework import status
+# from WooCommerce import API  # from 'woocommerce' Python package
+
+
+# Custom store integration
+from rest_framework import generics, permissions
+from .models import CustomStore, Category, CustomProduct
+from .serializers import CustomStoreSerializer, CategorySerializer, CustomProductSerializer
+from .serializers import (
+    CustomStoreSerializer,
+    CategorySerializer,
+    CustomProductSerializer
+)
+from rest_framework.exceptions import PermissionDenied
+
 import base64
+
 
 User = get_user_model()
 
 # Step 1: Generate OAuth redirect URL
 
 class ShopifyAuthRedirectView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         shop = request.query_params.get("shop")
@@ -87,3 +110,178 @@ class ShopifyCallbackView(APIView):
             return Response({"message": "Shop connected!", "shop": shop})
 
         return Response({"error": "Failed to get access token"}, status=400)
+    
+    
+# woo and big commerce integration   
+
+# ==============================
+# WooCommerce Integration
+# ==============================
+
+# class WooCommerceAuthView(APIView):
+#     def post(self, request):
+#         data = request.data
+#         site_url = data.get("store_url")
+#         consumer_key = data.get("consumer_key")
+#         consumer_secret = data.get("consumer_secret")
+
+#         try:
+#             wcapi = API(
+#                 url=site_url,
+#                 consumer_key=consumer_key,
+#                 consumer_secret=consumer_secret,
+#                 version="wc/v3"
+#             )
+
+#             response = wcapi.get("products")  # Test call
+
+#             if response.status_code == 200:
+#                 return Response({"message": "WooCommerce store connected!"}, status=200)
+#             else:
+#                 return Response({"error": "Failed to connect"}, status=response.status_code)
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=400)
+
+
+# ==============================
+# BigCommerce Integration
+# ==============================
+
+
+class BigCommerceAuthRedirectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        params = {
+            "client_id" : settings.BIGCOMMERCE_CLIENT_ID,
+            "redirect_uri" : settings.BIGCOMMERCE_REDIRECT_URI,
+            "scope" : settings.BIGCOMMERCE_SCOPES,
+            "response_type": "code",
+            "context" : "store",
+        }
+        
+        url = f"https://login.bigcommerce.com/oauth2/authorize?{urlencode(params)}"
+        
+        return Response({"url": url})
+
+class BigCommerceCallbackView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        code = request.GET.get("code")
+        context = request.GET.get("context")
+        scope = request.GET.get('scope')
+
+        if not code or not context:
+            return Response({"error": "Missing required parameters"}, status=400)
+
+        token_url = "https://login.bigcommerce.com/oauth2/token"
+        payload = {
+            "client_id": settings.BIGCOMMERCE_CLIENT_ID,
+            "client_secret": settings.BIGCOMMERCE_CLIENT_SECRET,
+            "redirect_uri": settings.BIGCOMMERCE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+            "code": code,
+            'scope': scope,
+            "context": context,
+            
+        }
+
+        response = requests.post(token_url, json=payload)
+        if response.status_code == 200:
+            data = response.json()
+            access_token = data["access_token"]
+            store_hash = data["context"].split("/")[1]
+
+            BigCommerceStore.objects.update_or_create(
+                store_hash=store_hash,
+                defaults={
+                    "user": request.user,
+                    "access_token": access_token,
+                    "scope": data.get("scope", ""),
+                    "context": data.get("context", ""),
+                },
+            )
+            return Response({"message": "BigCommerce store connected!"})
+        return Response({"error": "Failed to fetch access token"}, status=400)
+
+
+# ==============================
+# Custom store integration
+# ==============================
+
+class IsOwner(permissions.BasePermission):
+    """ Custom permission to allow only owners to manage their objects """
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+
+# ---------- Custom Store Views ----------
+class StoreListCreateView(generics.ListCreateAPIView):
+    serializer_class = CustomStoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CustomStore.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        return Response({"message": "Shop created successfully", "data": response.data}, status=status.HTTP_201_CREATED)
+
+
+class StoreRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CustomStoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        return CustomStore.objects.filter(user=self.request.user)
+
+
+# ---------- Category Views ----------
+class CategoryListCreateView(generics.ListCreateAPIView):
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        shop_id = self.request.query_params.get('shop')
+        if shop_id:
+            return Category.objects.filter(shop__id=shop_id)
+        return Category.objects.all()
+
+
+class CategoryRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = Category.objects.all()
+    lookup_field = 'pk'
+
+
+# ---------- Custom Product Views ----------
+class ProductListCreateView(generics.ListCreateAPIView):
+    serializer_class = CustomProductSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        shop_id = self.request.query_params.get('shop')
+        category_id = self.request.query_params.get('category')
+
+        queryset = CustomProduct.objects.all()
+
+        if shop_id:
+            queryset = queryset.filter(shop__id=shop_id)
+        if category_id:
+            queryset = queryset.filter(category__id=category_id)
+            
+        return queryset
+            
+
+class ProductRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CustomProductSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = CustomProduct.objects.all()
+    lookup_field = 'pk'

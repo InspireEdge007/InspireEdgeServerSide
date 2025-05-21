@@ -1,17 +1,11 @@
-<<<<<<< Updated upstream
 from datetime import timedelta
 
-=======
->>>>>>> Stashed changes
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import pyotp
 
-from django.conf import settings
-
-from datetime import timedelta
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -137,3 +131,5 @@ class PaymentType(models.Model):
     tier = models.CharField(max_length=20, choices=User.TIER_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     features = models.TextField()
+
+

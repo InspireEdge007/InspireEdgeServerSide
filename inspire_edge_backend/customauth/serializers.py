@@ -12,7 +12,7 @@ from .tasks import downgrade_user_task
 from rest_framework import serializers
 
 # business import
-from .models import BusinessProfile
+# from .models import BusinessProfile
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -119,11 +119,4 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class GoogleLoginSerializer(SocialLoginSerializer):
     pass
-
-# Business serializer
-class BusinessProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BusinessProfile
-        fields = '__all__'
-        read_only_fields = ['user', 'subscription_tier', 'subscription_start', 'subscription_ends']
 
