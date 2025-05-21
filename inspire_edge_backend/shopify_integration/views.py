@@ -18,7 +18,8 @@ from rest_framework.decorators import api_view, permission_classes
 from shopify_integration.models import *
 from rest_framework import status
 # from WooCommerce import API  # from 'woocommerce' Python package
-
+import logging
+logger = logging.getLogger(__name__)
 
 # Custom store integration
 from rest_framework import generics, permissions
@@ -171,7 +172,8 @@ class BigCommerceCallbackView(APIView):
     def get(self, request):
         code = request.GET.get("code")
         context = request.GET.get("context")
-        scope = request.GET.get('scope')
+        scope = request.GET.get("scope")
+        user = request.user if request.user.is_authenticated else None
 
         if not code or not context:
             return Response({"error": "Missing required parameters"}, status=400)
@@ -183,28 +185,37 @@ class BigCommerceCallbackView(APIView):
             "redirect_uri": settings.BIGCOMMERCE_REDIRECT_URI,
             "grant_type": "authorization_code",
             "code": code,
-            'scope': scope,
+            "scope": scope,
             "context": context,
-            
         }
 
-        response = requests.post(token_url, json=payload)
-        if response.status_code == 200:
+        try:
+            response = requests.post(token_url, json=payload)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(f"Token request failed: {str(e)}")
+            return Response({"error": f"Token request failed: {str(e)}"}, status=500)
+
+        try:
             data = response.json()
             access_token = data["access_token"]
             store_hash = data["context"].split("/")[1]
 
+            from .models import BigCommerceStore  # Adjust if needed
+
             BigCommerceStore.objects.update_or_create(
                 store_hash=store_hash,
                 defaults={
-                    "user": request.user,
+                    "user": user,
                     "access_token": access_token,
                     "scope": data.get("scope", ""),
                     "context": data.get("context", ""),
                 },
             )
             return Response({"message": "BigCommerce store connected!"})
-        return Response({"error": "Failed to fetch access token"}, status=400)
+        except Exception as e:
+            logger.exception("Unexpected error occurred during BigCommerce callback")
+            return Response({"error": f"Internal error: {str(e)}"}, status=500)
     
     
 
