@@ -166,7 +166,7 @@ class BigCommerceAuthRedirectView(APIView):
         return Response({"url": url})
 
 class BigCommerceCallbackView(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         code = request.GET.get("code")
