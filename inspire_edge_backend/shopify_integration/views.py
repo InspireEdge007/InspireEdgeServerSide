@@ -12,10 +12,6 @@ from django.contrib.auth import get_user_model
 # using fbv
 from rest_framework.decorators import api_view, permission_classes
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 
 # woo and big commerce integration
@@ -152,6 +148,23 @@ class ShopifyCallbackView(APIView):
 # BigCommerce Integration
 # ==============================
 
+
+class BigCommerceAuthRedirectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        params = {
+            "client_id" : settings.BIGCOMMERCE_CLIENT_ID,
+            "redirect_uri" : settings.BIGCOMMERCE_REDIRECT_URI,
+            "scope" : settings.BIGCOMMERCE_SCOPES,
+            "response_type": "code",
+            "context" : "store",
+        }
+        
+        url = f"https://login.bigcommerce.com/oauth2/authorize?{urlencode(params)}"
+        
+        return Response({"url": url})
+
 class BigCommerceCallbackView(APIView):
     # permission_classes = [IsAuthenticated]
 
@@ -170,14 +183,13 @@ class BigCommerceCallbackView(APIView):
             "redirect_uri": settings.BIGCOMMERCE_REDIRECT_URI,
             "grant_type": "authorization_code",
             "code": code,
-            "scope": scope,
+            'scope': scope,
             "context": context,
+            
         }
 
-        try:
-            response = requests.post(token_url, json=payload)
-            response.raise_for_status()  # will raise HTTPError for bad responses
-
+        response = requests.post(token_url, json=payload)
+        if response.status_code == 200:
             data = response.json()
             access_token = data["access_token"]
             store_hash = data["context"].split("/")[1]
@@ -185,21 +197,51 @@ class BigCommerceCallbackView(APIView):
             BigCommerceStore.objects.update_or_create(
                 store_hash=store_hash,
                 defaults={
-                    "user": request.user if request.user.is_authenticated else None,
+                    "user": request.user,
                     "access_token": access_token,
                     "scope": data.get("scope", ""),
                     "context": data.get("context", ""),
                 },
             )
             return Response({"message": "BigCommerce store connected!"})
-
-        except requests.exceptions.RequestException as e:
-            return Response({"error": str(e)}, status=500)
-
-        except Exception as e:
-            return Response({"error": f"Unexpected error: {str(e)}"}, status=500)
+        return Response({"error": "Failed to fetch access token"}, status=400)
+    
+    
 
 
+# ==============================
+# Custom store integration
+# ==============================
+
+class IsOwner(permissions.BasePermission):
+    """ Custom permission to allow only owners to manage their objects """
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+
+# ---------- Custom Store Views ----------
+class StoreListCreateView(generics.ListCreateAPIView):
+    serializer_class = CustomStoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CustomStore.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        return Response({"message": "Shop created successfully", "data": response.data}, status=status.HTTP_201_CREATED)
+
+
+class StoreRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CustomStoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        return CustomStore.objects.filter(user=self.request.user)
 
 
 # ---------- Category Views ----------
