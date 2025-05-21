@@ -193,14 +193,13 @@ class BigCommerceCallbackView(APIView):
             response = requests.post(token_url, json=payload)
             response.raise_for_status()
             data = response.json()
-
+            logger.info(f"BigCommerce token response: {data}")
+    
             context_str = data.get("context", "")
-            parts = context_str.split("/")
-            if len(parts) != 2 or parts[0] != "store":
-                logger.error(f"Invalid context format: {context_str}")
-                return Response({"error": f"Invalid context format: {context_str}"}, status=400)
+            if not context_str or "/" not in context_str:
+                    return Response({"error": f"Invalid context format: {context_str}"}, status=400)
 
-            store_hash = parts[1]
+            store_hash = context_str.split("/")[1]
 
             user = request.user if request.user.is_authenticated else None
 
