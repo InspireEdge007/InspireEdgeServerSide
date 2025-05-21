@@ -42,3 +42,10 @@ class UserRoleAdmin(admin.ModelAdmin):
 class UserOTPAdmin(admin.ModelAdmin):
     list_display = ('user', 'otp_verified', 'created')
 
+# @admin.register(BusinessProfile)
+# class BusinessProfile(admin.ModelAdmin):
+#     list_display = ('user', 'business_name', 'business_email','business_website', "phone_number",'industry', 'business_size', 'role', 
+#                     'subscription_tier', 'subscription_start', 'subscription_ends', 'is_active')
+    
+    
+   

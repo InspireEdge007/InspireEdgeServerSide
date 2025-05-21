@@ -1,12 +1,17 @@
 from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
+# from .stripe_webhook import stripe_webhook_view
 from customauth.views import (
     RegisterAPIView, VerifyOTPAPIView, LoginAPIView,
     RoleListCreateAPIView, AssignRoleAPIView,
     AdminDashboardAPIView, UserProfileAPIView, ResendOTPAPIView,
     ForgotPasswordAPIView, ResetPasswordAPIView,
+<<<<<<< Updated upstream
     GoogleLogin,SubscriptionPaymentAPIView
+=======
+    GoogleLogin, BusinessProfileCreateView, 
+>>>>>>> Stashed changes
 )
 
 urlpatterns = [
@@ -29,6 +34,17 @@ urlpatterns = [
 
     path("admin-dashboard", AdminDashboardAPIView.as_view(), name="admin-dashboard"),
     path("profile", UserProfileAPIView.as_view(), name="user-profile"),
-
+    # business url
+    path('submit-business-profile/', BusinessProfileCreateView.as_view(), name='submit-business-profile'),
+    # path('webhooks/stripe/', stripe_webhook_view, name='stripe-webhook'),
 
 ]
+
+
+  
+
+
+
+
+
+

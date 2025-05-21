@@ -1,10 +1,17 @@
+<<<<<<< Updated upstream
 from datetime import timedelta
 
+=======
+>>>>>>> Stashed changes
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import pyotp
+
+from django.conf import settings
+
+from datetime import timedelta
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):

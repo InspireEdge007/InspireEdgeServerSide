@@ -52,6 +52,8 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
+    env_file:                     # NEW: pass the password here too
+      - ./.env
     networks:
       - AI-network
 
@@ -89,9 +91,13 @@ services:
     command: ["celery", "-A", "AI", "flower", "--port=5555"]
     ports:
       - "5555:5555"
+    volumes:
+    - .:/app    
     depends_on:
       - redis
       - celery
+    env_file:         
+      - ./.env      
     networks:
       - AI-network
 
