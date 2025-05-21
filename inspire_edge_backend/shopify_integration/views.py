@@ -195,13 +195,13 @@ class BigCommerceCallbackView(APIView):
             data = response.json()
 
             context_str = data.get("context", "")
-            try:
-                store_hash = context_str.split("/")[1]
-            except IndexError:
+            parts = context_str.split("/")
+            if len(parts) != 2 or parts[0] != "store":
                 logger.error(f"Invalid context format: {context_str}")
                 return Response({"error": f"Invalid context format: {context_str}"}, status=400)
 
-            # NOTE: request.user might be anonymous unless you enforce authentication
+            store_hash = parts[1]
+
             user = request.user if request.user.is_authenticated else None
 
             BigCommerceStore.objects.update_or_create(
@@ -223,6 +223,7 @@ class BigCommerceCallbackView(APIView):
         except Exception as e:
             logger.exception("Unexpected error occurred during BigCommerce callback")
             return Response({"error": f"Internal error: {str(e)}"}, status=500)
+
 
 
 
