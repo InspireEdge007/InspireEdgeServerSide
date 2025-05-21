@@ -165,15 +165,11 @@ class BigCommerceAuthRedirectView(APIView):
         
         return Response({"url": url})
 
-
-
 class BigCommerceCallbackView(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        code = request.GET.get("code")
-        context = request.GET.get("context")
-        scope = request.GET.get("scope")
+    def post(self, request):
+        code = request.data.get("code")
+        context = request.data.get("context")
+        scope = request.data.get("scope")
 
         if not code or not context:
             return Response({"error": "Missing required parameters"}, status=400)
@@ -191,16 +187,16 @@ class BigCommerceCallbackView(APIView):
 
         try:
             response = requests.post(token_url, json=payload)
-            response.raise_for_status()
+            if response.status_code != 200:
+                return Response({"error": f"Token request failed: {response.text}"}, status=response.status_code)
+
             data = response.json()
-            logger.info(f"BigCommerce token response: {data}")
-    
+
             context_str = data.get("context", "")
             if not context_str or "/" not in context_str:
-                    return Response({"error": f"Invalid context format: {context_str}"}, status=400)
+                return Response({"error": f"Invalid context format: {context_str}"}, status=400)
 
             store_hash = context_str.split("/")[1]
-
             user = request.user if request.user.is_authenticated else None
 
             BigCommerceStore.objects.update_or_create(
@@ -216,14 +212,10 @@ class BigCommerceCallbackView(APIView):
             return Response({"message": "BigCommerce store connected!"})
 
         except requests.RequestException as e:
-            logger.error(f"Token request failed: {str(e)}")
             return Response({"error": "Failed to fetch access token"}, status=500)
 
         except Exception as e:
-            logger.exception("Unexpected error occurred during BigCommerce callback")
             return Response({"error": f"Internal error: {str(e)}"}, status=500)
-
-
 
 
 # ==============================
