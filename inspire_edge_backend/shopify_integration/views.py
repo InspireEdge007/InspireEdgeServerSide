@@ -114,7 +114,9 @@ class ShopifyCallbackView(APIView):
             return Response({"message": "Shop connected!", "shop": shop})
 
         return Response({"error": "Failed to get access token"}, status=400)
-     
+    
+    
+# woo and big commerce integration   
 
 # ==============================
 # WooCommerce Integration
@@ -151,7 +153,7 @@ class ShopifyCallbackView(APIView):
 # ==============================
 
 class BigCommerceCallbackView(APIView):
-    # permission_classes = [IsAuthenticated]  
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         code = request.GET.get("code")
@@ -161,45 +163,43 @@ class BigCommerceCallbackView(APIView):
         if not code or not context:
             return Response({"error": "Missing required parameters"}, status=400)
 
+        token_url = "https://login.bigcommerce.com/oauth2/token"
+        payload = {
+            "client_id": settings.BIGCOMMERCE_CLIENT_ID,
+            "client_secret": settings.BIGCOMMERCE_CLIENT_SECRET,
+            "redirect_uri": settings.BIGCOMMERCE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+            "code": code,
+            "scope": scope,
+            "context": context,
+        }
+
         try:
-            token_url = "https://login.bigcommerce.com/oauth2/token"
-            payload = {
-                "client_id": settings.BIGCOMMERCE_CLIENT_ID,
-                "client_secret": settings.BIGCOMMERCE_CLIENT_SECRET,
-                "redirect_uri": settings.BIGCOMMERCE_REDIRECT_URI,
-                "grant_type": "authorization_code",
-                "code": code,
-                "scope": scope,
-                "context": context,
-            }
-
             response = requests.post(token_url, json=payload)
+            response.raise_for_status()  # will raise HTTPError for bad responses
 
-            if response.status_code == 200:
-                data = response.json()
-                access_token = data["access_token"]
-                store_hash = data["context"].split("/")[1]
+            data = response.json()
+            access_token = data["access_token"]
+            store_hash = data["context"].split("/")[1]
 
-                BigCommerceStore.objects.update_or_create(
-                    store_hash=store_hash,
-                    defaults={
-                        "user": request.user if request.user.is_authenticated else None,
-                        "access_token": access_token,
-                        "scope": data.get("scope", ""),
-                        "context": data.get("context", ""),
-                    },
-                )
-                return Response({"message": "BigCommerce store connected!"})
-            else:
-                logger.error("Token exchange failed: %s", response.text)
-                return Response({"error": "Failed to fetch access token"}, status=400)
+            BigCommerceStore.objects.update_or_create(
+                store_hash=store_hash,
+                defaults={
+                    "user": request.user if request.user.is_authenticated else None,
+                    "access_token": access_token,
+                    "scope": data.get("scope", ""),
+                    "context": data.get("context", ""),
+                },
+            )
+            return Response({"message": "BigCommerce store connected!"})
+
+        except requests.exceptions.RequestException as e:
+            return Response({"error": str(e)}, status=500)
 
         except Exception as e:
-            logger.error("BigCommerce callback error: %s", str(e))
-            return Response(
-                {"error": "Something went wrong. Please try again later."},
-                status=500
-            )
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=500)
+
+
 
 
 # ---------- Category Views ----------
