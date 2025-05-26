@@ -11,7 +11,7 @@ from urllib.parse import quote
 from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
-from .utils import amazon_products
+from .utils import amazon_products, connect_to_market_recon
 import base64
 import json
 
@@ -135,19 +135,25 @@ class CompareProductsView(APIView):
                 f"https://{shop}/admin/api/2023-10/products/{shopify_product_id}.json",
                 headers=headers
             )
+
             shopify_product = shopify_res.json()['product']
 
             shopify_product_title = quote("Apple iPhone 8 64GB Unlocked - Gray")
 
-            print(f'shopify title : {shopify_product_title}')
+            # print(f'shopify title : {shopify_product_title}')
 
             # Fetch from external source (Amazon, WooCommerce, etc.)
             external_product = amazon_products(shopify_product_title, 1)
 
-            print(f'amazon products {external_product}')
+            print(type(shopify_product))
+
+
             if external_product:
 
-                return Response(external_product)
+                Ai_response = connect_to_market_recon(external_product, dict(shopify_product))
+                print(Ai_response)
+
+                return Response({"message": "Market recomends!", "data" : Ai_response}, status=200)
             else :
                 return Response({"error": "competitors product with title not found"}, status=400)
 

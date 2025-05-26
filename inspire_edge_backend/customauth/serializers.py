@@ -62,7 +62,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
 
         # Schedule downgrade task 14 days later
-        downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+        # downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
 
         return user
 

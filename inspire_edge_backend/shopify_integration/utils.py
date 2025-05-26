@@ -21,7 +21,7 @@ def amazon_products(keyword, page):
 
 
         if response.status_code != 200:
-            print("API call failed:", response.status_code)
+            print("API call failed:", {response.status_code , response.text})
 
             return None
 
@@ -56,3 +56,48 @@ def amazon_products(keyword, page):
         # page += 1
 
         return results
+
+
+def connect_to_market_recon(competitor, shopify):
+    url = "https://inspireedgeml.onrender.com/market-recon/recommend"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    # print(shopify["id"])
+    data = [
+        {
+            "business_id": str(shopify["variants"][0]["id"]),
+            "product_id": str(shopify["id"]),
+            "product_name": shopify["title"],
+            "product_price": shopify["variants"][0]["price"],
+            "product_name": shopify["title"],
+            "competitors": [
+                {
+                    "competitor_id": competitor[0]["asin"],
+                    "competitor_name": "john",
+                    "competitor_price": competitor[0]["price"],
+                    "competitor_product_title": competitor[0]["title"],
+                    "competitor_product_description": "shoe",
+                    "event_type": "shoe"
+                }
+            ]
+        }
+    ]
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text
+
+
+
+
+
