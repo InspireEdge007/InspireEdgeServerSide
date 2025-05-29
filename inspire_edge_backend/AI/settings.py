@@ -45,12 +45,15 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "customauth.apps.CustomAuthConfig",
+    "corsheaders",
     # "djangocelery_beat",
     "shopify_integration"
 
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -194,4 +197,9 @@ SHOPIFY_API_KEY = os.getenv("SHOPIFY_API_KEY")
 SHOPIFY_API_SECRET = os.getenv("SHOPIFY_API_SECRET")
 SHOPIFY_SCOPES = os.getenv("SHOPIFY_SCOPES")
 SHOPIFY_REDIRECT_URI = os.getenv("SHOPIFY_REDIRECT_URI")
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Your React frontend
+]
+
 
