@@ -37,6 +37,7 @@ class User(AbstractUser):
 
     is_verified = models.BooleanField(default=False)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    business_name = models.CharField(max_length=100, blank=True, null=True)
     tier = models.CharField(max_length=10, choices=TIER_CHOICES, default='basic')
     trial_start = models.DateTimeField(null=True, blank=True)
     trial_end = models.DateTimeField(null=True, blank=True)
