@@ -27,6 +27,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'first_name': {'required': False},
             'last_name': {'required': False},
             'phone_number': {'required': False},
+            'business_name': {'required': True},
             'password': {'write_only': True},
         }
 
