@@ -27,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 from rest_framework import generics, permissions, status
-from requests_oauthlib import OAuth1
-from django.shortcuts import redirect
-from django.urls import reverse
+from rest_framework.permissions import AllowAny
 
 
 
@@ -158,7 +156,7 @@ class WooCommerceAuthView(APIView):
         return Response({"url": auth_url})
     
 class WooCommerceCallbackView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         store_url = request.GET.get("store_url")
@@ -204,7 +202,7 @@ class BigCommerceAuthRedirectView(APIView):
 
 
 class BigCommerceCallbackView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         code = request.GET.get("code")
