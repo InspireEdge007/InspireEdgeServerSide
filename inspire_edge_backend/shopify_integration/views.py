@@ -132,7 +132,7 @@ class ShopifyCallbackView(APIView):
 
 
 class WooCommerceAuthView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         store_url = request.data.get("store_url")
@@ -183,7 +183,7 @@ class WooCommerceCallbackView(APIView):
 # BigCommerce Integration
 # ==============================
 class BigCommerceAuthRedirectView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         refresh = RefreshToken.for_user(request.user)
