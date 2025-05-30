@@ -16,6 +16,8 @@ urlpatterns = [
     # path("woocommerce/connect", WooCommerceAuthView.as_view(), name="woocommerce-connect"),
     path("bigcommerce/auth", BigCommerceAuthRedirectView.as_view(), name="bigcommerce-auth"),
     path("bigcommerce/callback", BigCommerceCallbackView.as_view(), name="bigcommerce-callback"),
+    
+    
         # Store endpoints
     path('stores/', StoreListCreateView.as_view(), name='store-list-create'),
     path('stores/<int:pk>/', StoreRetrieveUpdateDestroyView.as_view(), name='store-detail'),
