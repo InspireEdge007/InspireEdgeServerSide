@@ -24,7 +24,7 @@ urlpatterns = [
     path("reset-password", ResetPasswordAPIView.as_view(), name="reset-password"),
 
     path("activate-subcription", SubscriptionPaymentAPIView.as_view(), name="activate-subscription"),
-  
+
     path("roles", RoleListCreateAPIView.as_view(), name="role-list-create"),
     path("assign-role", AssignRoleAPIView.as_view(), name="assign-role"),
 

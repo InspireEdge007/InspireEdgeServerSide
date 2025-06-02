@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from django.conf import settings
 from urllib.parse import urlencode
 from rest_framework.permissions import IsAuthenticated
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 import requests
+from urllib.parse import quote
 
 from urllib.parse import urlencode
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
@@ -15,8 +18,6 @@ from django.contrib.auth import get_user_model
 # using fbv
 from rest_framework.decorators import api_view, permission_classes
 
-
-
 # woo and big commerce integration
 from shopify_integration.models import *
 from rest_framework import status
@@ -24,13 +25,8 @@ from rest_framework import status
 import logging
 logger = logging.getLogger(__name__)
 
-
-
 from rest_framework import generics, permissions, status
 from rest_framework.permissions import AllowAny
-
-
-
 
 # Custom store integration
 from rest_framework import generics, permissions
@@ -43,40 +39,42 @@ from .serializers import (
 )
 from rest_framework.exceptions import PermissionDenied
 
+from .utils import amazon_products, connect_to_market_recon
+
 import base64
+import json
 
 
 User = get_user_model()
 
-# Step 1: Generate OAuth redirect URL
-
 class ShopifyAuthRedirectView(APIView):
-    # permission_classes = [IsAuthenticated]
+
+    permission_classes = [IsAuthenticated]  # Enable once frontend is ready to send auth token
 
     def get(self, request):
         shop = request.query_params.get("shop")
         if not shop:
             return Response({"error": "Missing shop parameter"}, status=400)
 
-        # Create JWT for current user and encode it as base64
-        refresh = RefreshToken.for_user(request.user)
-        state = base64.urlsafe_b64encode(str(refresh.access_token).encode()).decode()
+        if not request.user.is_authenticated:
+            return Response({"error": "User not authenticated"}, status=401)
+
+        # Encode user ID in base64 to send as `state`
+        user_id = str(request.user.id)
+        encoded_state = base64.urlsafe_b64encode(user_id.encode()).decode()
 
         params = {
             "client_id": settings.SHOPIFY_API_KEY,
             "scope": settings.SHOPIFY_SCOPES,
             "redirect_uri": settings.SHOPIFY_REDIRECT_URI,
-            "state": state,
+            "state": encoded_state,
         }
 
         redirect_url = f"https://{shop}/admin/oauth/authorize?" + urlencode(params)
         return Response({"url": redirect_url})
 
-
-# Step 2: Handle callback and save token
 class ShopifyCallbackView(APIView):
-
-    permission_classes = [IsAuthenticated]
+    # No authentication here because user is identified via the `state` param
 
     def get(self, request):
         code = request.GET.get("code")
@@ -86,20 +84,14 @@ class ShopifyCallbackView(APIView):
         if not code or not shop or not state:
             return Response({"error": "Missing code, shop, or state"}, status=400)
 
-        # Decode and validate the JWT token from state
+        # Decode `state` to retrieve the user ID
         try:
-            decoded_state = base64.urlsafe_b64decode(state).decode()
-            access_token = AccessToken(decoded_state)
-            user = request.user
+            decoded_user_id = base64.urlsafe_b64decode(state).decode()
+            user = User.objects.get(id=int(decoded_user_id))
+        except (ValueError, User.DoesNotExist, Exception) as e:
+            return Response({"error": f"Invalid state/user: {str(e)}"}, status=400)
 
-            # Verify that the decoded token is for the current user (can be added as extra security)
-            if str(user.id) != str(access_token['user_id']):
-                return Response({"error": "Invalid user for this state"}, status=400)
-
-        except Exception as e:
-            return Response({"error": f"Invalid state parameter: {str(e)}"}, status=400)
-
-        # Proceed to fetch the Shopify access token
+        # Exchange the authorization code for an access token
         token_url = f"https://{shop}/admin/oauth/access_token"
         payload = {
             "client_id": settings.SHOPIFY_API_KEY,
@@ -109,17 +101,103 @@ class ShopifyCallbackView(APIView):
 
         response = requests.post(token_url, json=payload)
 
-        if response.status_code == 200:
-            data = response.json()
-            access_token = data["access_token"]
+        if response.status_code != 200:
+            return Response({"error": "Failed to get access token", "details": response.json()}, status=400)
 
-            # Store the access token in the ShopifyStore model
-            ShopifyStore.objects.update_or_create(
-                shop_domain=shop,
+        data = response.json()
+        access_token = data.get("access_token")
+
+        if not access_token:
+            return Response({"error": "No access token returned from Shopify"}, status=400)
+
+        # Store or update the Shopify store for this user
+        try:
+            store, created = ShopifyStore.objects.update_or_create(
+                shop_domain=shop.lower().strip(),
                 defaults={"access_token": access_token, "user": user},
             )
+            message = "Shopify store created." if created else "Shopify store updated."
+            return Response({"message": message, "shop": shop})
+        except IntegrityError as e:
+            return Response({"error": f"Database integrity error: {e}"}, status=500)
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {e}"}, status=500)
 
-            return Response({"message": "Shop connected!", "shop": shop})
+class FetchProductsView(APIView):
+
+    def get(self, request):
+
+        stores = ShopifyStore.objects.all()
+
+        for store in stores:
+            headers = {
+                "X-Shopify-Access-Token": store.access_token,
+                "Content-Type": "application/json"
+            }
+            response = requests.get(
+                f"https://{store.shop_domain}/admin/api/2023-04/products.json",
+                headers=headers
+            )
+
+            products = response.json().get("products", [])
+            with open("products.json", "w") as file:
+                json.dump(products, file, indent= 4)
+
+
+        return Response({"message": "Products fetched!", 'data' : products})
+
+class CompareProductsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        shop = request.query_params.get("shop")
+        shopify_product_id = request.query_params.get("shopify_product_id")
+        # external_product_url = request.query_params.get("external_url")
+
+        try:
+            # Fetch from Shopify (connected)
+            shopify_store = ShopifyStore.objects.get(shop_domain=shop)
+
+            headers = {
+                "X-Shopify-Access-Token": shopify_store.access_token
+            }
+            shopify_res = requests.get(
+                f"https://{shop}/admin/api/2023-10/products/{shopify_product_id}.json",
+                headers=headers
+            )
+
+            shopify_product = shopify_res.json()['product']
+
+            shopify_product_title = quote("Apple iPhone 8 64GB Unlocked - Gray")
+
+            # print(f'shopify title : {shopify_product_title}')
+
+            # Fetch from external source (Amazon, WooCommerce, etc.)
+            external_product = amazon_products(shopify_product_title, 1)
+
+            print(type(shopify_product))
+
+
+            if external_product:
+
+                Ai_response = connect_to_market_recon(external_product, dict(shopify_product))
+                print(Ai_response)
+
+                return Response({"message": "Market recomends!", "data" : Ai_response}, status=200)
+            else :
+                return Response({"error": "competitors product with title not found"}, status=400)
+
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {e}"}, status=500)
+
+    # def fetch_external_product(url):
+    # # Placeholder: fetch from Amazon, WooCommerce, etc.
+    #     return {
+    #         "title": "Sample Product",
+    #         "price": "42.00",
+    #         "sku": "ABC123"
+    #     }
 
         return Response({"error": "Failed to get access token"}, status=400)
     
@@ -350,3 +428,4 @@ class ProductRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = CustomProduct.objects.all()
     lookup_field = 'pk'
+

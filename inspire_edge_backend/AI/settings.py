@@ -45,12 +45,15 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "customauth.apps.CustomAuthConfig",
+    "corsheaders",
     # "djangocelery_beat",
     "shopify_integration"
 
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -212,3 +215,9 @@ BIGCOMMERCE_ACCESS_TOKEN = os.getenv('BIGCOMMERCE_ACCESS_TOKEN')
 WOOCOMMERCE_API_URL=os.getenv("WOOCOMMERCE_API_URL")
 WOOCOMMERCE_CONSUMER_KEY=os.getenv("WOOCOMMERCE_CONSUMER_KEY")
 WOOCOMMERCE_CONSUMER_SECRET=os.getenv("WOOCOMMERCE_CONSUMER_SECRET")
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Your React frontend
+]
+
+

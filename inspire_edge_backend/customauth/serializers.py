@@ -25,11 +25,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'password2', 'first_name', 'last_name', 'phone_number']
+        fields = ['email', 'password', 'password2', 'first_name', 'last_name', 'phone_number', 'business_name']
         extra_kwargs = {
             'first_name': {'required': False},
             'last_name': {'required': False},
             'phone_number': {'required': False},
+            'business_name': {'required': True},
             'password': {'write_only': True},
         }
 
@@ -65,7 +66,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
 
         # Schedule downgrade task 14 days later
-        downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+        # downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
 
         return user
 

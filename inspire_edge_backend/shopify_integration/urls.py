@@ -3,6 +3,7 @@
 from django.urls import path
 from .views import (
     ShopifyAuthRedirectView, ShopifyCallbackView,
+    CompareProductsView, FetchProductsView
     # WooCommerceAuthView,
     BigCommerceAuthRedirectView, BigCommerceCallbackView,
     StoreListCreateView, StoreRetrieveUpdateDestroyView,
@@ -13,6 +14,8 @@ from .views import (
 urlpatterns = [
     path("auth", ShopifyAuthRedirectView.as_view(), name="shopify-auth"),
     path("callback", ShopifyCallbackView.as_view(), name="shopify-callback"),
+    path('fetch-products', FetchProductsView.as_view(), name='shopify-products'),
+    path('compare', CompareProductsView.as_view(), name='shopify-compare'),
     # path("woocommerce/connect", WooCommerceAuthView.as_view(), name="woocommerce-connect"),
     path("bigcommerce/auth", BigCommerceAuthRedirectView.as_view(), name="bigcommerce-auth"),
     path("bigcommerce/callback", BigCommerceCallbackView.as_view(), name="bigcommerce-callback"),
@@ -29,5 +32,6 @@ urlpatterns = [
     # Product endpoints
     path('products/', ProductListCreateView.as_view(), name='product-list-create'),
     path('products/<int:pk>/', ProductRetrieveUpdateDestroyView.as_view(), name='product-detail'),
+
 ]
 

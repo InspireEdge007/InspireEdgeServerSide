@@ -33,6 +33,7 @@ from .serializers import GoogleLoginSerializer
     
 
 class RegisterAPIView(APIView):
+
     def post(self, request):
         try:
             serializer = UserRegistrationSerializer(data=request.data)
@@ -43,14 +44,14 @@ class RegisterAPIView(APIView):
                 user.start_trial()
 
                 # Schedule downgrade in 14 days
-                downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
+                # downgrade_user_task.apply_async(args=[user.id], eta=user.trial_end)
 
                 # Generate OTP secret
                 otp_secret = pyotp.random_base32()
                 UserOTP.objects.create(user=user, otp_secret=otp_secret)
 
                 # Generate OTP code (in production, send via SMS/email)
-                totp = pyotp.TOTP(otp_secret, interval=300)
+                totp = pyotp.TOTP(otp_secret, interval=3000)
                 otp_code = totp.now()
 
                 return Response({
@@ -62,7 +63,7 @@ class RegisterAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
                 print("🔥 EXCEPTION:", traceback.format_exc())  # Logs to Render's log panel
-                return Response({"detail": "Something went wrong. Please try again later."}, status=500)
+                return Response({"detail": f"Something went wrong. Please try again later. str(e)"}, status=500)
 
 class ResendOTPAPIView(APIView):
 
@@ -245,7 +246,7 @@ class SubscriptionPaymentAPIView(APIView):
         user.activate_paid_subscription(months=months, tier=tier)
 
         # Schedule downgrade
-        
+
         downgrade_user_task.apply_async(args=[user.id], eta=user.subscription_end)
 
         return Response({
