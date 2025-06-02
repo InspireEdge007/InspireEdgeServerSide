@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import pyotp
 
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -131,3 +132,5 @@ class PaymentType(models.Model):
     tier = models.CharField(max_length=20, choices=User.TIER_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     features = models.TextField()
+
+

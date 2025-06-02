@@ -11,6 +11,9 @@ from .tasks import downgrade_user_task
 
 from rest_framework import serializers
 
+# business import
+# from .models import BusinessProfile
+
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from dj_rest_auth.registration.serializers import SocialLoginSerializer
@@ -117,3 +120,4 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class GoogleLoginSerializer(SocialLoginSerializer):
     pass
+
