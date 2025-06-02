@@ -10,7 +10,7 @@ import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer,
-    OTPSerializer, RoleSerializer, UserRoleSerializer, UserSerializer
+    OTPSerializer, RoleSerializer, UserRoleSerializer, UserSerializer, 
 )
 from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
@@ -30,7 +30,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from .serializers import GoogleLoginSerializer
-
+    
 
 class RegisterAPIView(APIView):
 

@@ -1,8 +1,10 @@
+
 import requests
 import os
 
 import urllib.parse
 
+from .models import LocalProduct
 
 
 def amazon_products(keyword, page):
@@ -96,7 +98,6 @@ def connect_to_market_recon(competitor, shopify):
     print(response.text)
 
     return response.text
-
 
 def connect_to_risk_delta_forecast(shopify,period):
 

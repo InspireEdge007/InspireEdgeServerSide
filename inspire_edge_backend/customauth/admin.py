@@ -42,3 +42,5 @@ class UserRoleAdmin(admin.ModelAdmin):
 class UserOTPAdmin(admin.ModelAdmin):
     list_display = ('user', 'otp_verified', 'created')
 
+ 
+   

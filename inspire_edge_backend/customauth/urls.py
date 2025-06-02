@@ -1,6 +1,7 @@
 from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
+# from .stripe_webhook import stripe_webhook_view
 from customauth.views import (
     RegisterAPIView, VerifyOTPAPIView, LoginAPIView,
     RoleListCreateAPIView, AssignRoleAPIView,
@@ -29,6 +30,15 @@ urlpatterns = [
 
     path("admin-dashboard", AdminDashboardAPIView.as_view(), name="admin-dashboard"),
     path("profile", UserProfileAPIView.as_view(), name="user-profile"),
-
-
+   
+   
 ]
+
+
+  
+
+
+
+
+
+
