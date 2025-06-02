@@ -98,6 +98,258 @@ def connect_to_market_recon(competitor, shopify):
     return response.text
 
 
+def connect_to_risk_delta_forecast(shopify,period):
+
+    url = "https://inspireedgeml.onrender.com//risk-delta/forecast"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data ={
+                "product_id": str(shopify["id"]),
+                "target": "product_price",
+                "periods": period,
+                "current_price": shopify["variants"][0]["price"],
+                "store_id": str(shopify["variants"][0]["id"]),
+                "price_history": [
+                    {
+                    "date": "2025-05-29",
+                    "value": 0
+                    }
+                ]
+        }
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    # print(response.status_code)
+    # print(response.text)
+
+    return response.text, response.status_code
+
+
+def connect_to_risk_delta_anomaly(shopify,period):
+
+    url = "https://inspireedgeml.onrender.com/risk-delta/anomaly"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = {
+                "product_id": str(shopify["id"]),
+                "target": "product_price",
+                "periods": period,
+                "current_price": shopify["variants"][0]["price"],
+                "store_id": str(shopify["variants"][0]["id"]),
+                "price_history": [
+                    {
+                    "date": "2025-05-29",
+                    "value": 0
+                    }
+                ]
+        }
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text, response.status_code
+
+
+def connect_to_strike_detect(shopify, limit):
+
+    url = "https://inspireedgeml.onrender.com//strike/detect"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = {
+            "business_id": str(shopify["variants"][0]["id"]),
+
+            "limit": limit
+            }
 
 
 
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text , response.status_code
+
+
+def connect_to_engagex_recommend(shopify, limit):
+
+    url = "https://inspireedgeml.onrender.com/engagex/recommend"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = {
+            "business_id":  str(shopify["variants"][0]["id"]),
+            "limit": limit
+            }
+
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text , response.status_code
+
+
+def connect_to_vooice_analyze_feedback(shopify):
+
+    url = "https://inspireedgeml.onrender.com/vooice/analyze-feedback"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = {
+            "business_id": str(shopify["variants"][0]["id"]),
+            "product_id": str(shopify["id"]),
+            "reviews": [
+                {
+                "text": "string",
+                "label": "string",
+                "timestamp": "2025-05-29",
+                }
+            ]
+            }
+
+
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text , response.status_code
+
+
+def connect_to_abandonment_freemium(shopify):
+
+    url = "https://inspireedgeml.onrender.com/abandonment/freemium"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = [
+
+                {
+                "session_duration_secs": 0,
+                "pages_viewed": 0,
+                "products_viewed": 0,
+                "cart_items_count": 0,
+                "cart_value_usd": 0,
+                "discount_applied": 0,
+                "session_hour": 0,
+                "returning_user": 0,
+                "total_dwell_time": 0,
+                "account_age_days": 0,
+                "total_sessions": 0,
+                "total_cart_abandons": 0,
+                "total_orders": 0,
+                "avg_session_duration_secs": 0,
+                "avg_cart_value_usd": 0,
+                "is_subscribed_email": 0,
+                "dwell_time_per_page": 0,
+                "cart_value_per_product": 0,
+                "abandonment_rate_user": 0,
+                "interaction_cart_time": 0,
+                "interaction_returning_abandon": 0,
+                "location_country": "unknown",
+                "weather": "clear",
+                "device_type": "unknown"
+                }
+
+    ]
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text
+
+
+def connect_to_abandonment_premium(shopify):
+
+    url = "https://inspireedgeml.onrender.com/abandonment/premium"
+
+    headers = {
+        "Content-Type": "application/json"
+        # Add Authorization if needed: "Authorization": "Bearer YOUR_TOKEN"
+    }
+
+    data = [
+
+        {
+            "session_duration_secs": 0,
+            "pages_viewed": 0,
+            "products_viewed": 0,
+            "cart_items_count": 0,
+            "cart_value_usd": 0,
+            "discount_applied": 0,
+            "session_hour": 0,
+            "returning_user": 0,
+            "total_dwell_time": 0,
+            "account_age_days": 0,
+            "total_sessions": 0,
+            "total_cart_abandons": 0,
+            "total_orders": 0,
+            "avg_session_duration_secs": 0,
+            "avg_cart_value_usd": 0,
+            "is_subscribed_email": 0,
+            "dwell_time_per_page": 0,
+            "cart_value_per_product": 0,
+            "abandonment_rate_user": 0,
+            "interaction_cart_time": 0,
+            "interaction_returning_abandon": 0,
+            "location_country": "unknown",
+            "weather": "clear",
+            "device_type": "unknown"
+            }
+
+    ]
+
+
+    # Use json= instead of data= to automatically convert dict to JSON
+    response = requests.post(url, json=data, headers=headers)
+
+    # Debugging: print response status and body
+    print(response.status_code)
+    print(response.text)
+
+    return response.text

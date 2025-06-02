@@ -85,6 +85,23 @@ class User(AbstractUser):
             self.is_paid = False
             self.save()
 
+    @property
+    def is_premium(self):
+        """Check if user has active premium access"""
+        now = timezone.now()
+        return (
+            self.tier in ['pro', 'enterprise'] or
+            (self.is_paid and self.subscription_end and self.subscription_end > now) or
+            (self.trial_end and self.trial_end > now and not self.trial_used)
+        )
+
+    @property
+    def active_subscription(self):
+        """Returns subscription type if active, None otherwise"""
+        if not self.is_premium:
+            return None
+        return self.tier
+
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
