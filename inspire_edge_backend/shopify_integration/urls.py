@@ -3,8 +3,8 @@
 from django.urls import path
 from .views import (
     ShopifyAuthRedirectView, ShopifyCallbackView,
-    CompareProductsView, FetchProductsView
-    # WooCommerceAuthView,
+    CompareProductsView, FetchProductsView,
+    WooCommerceAuthView, WooCommerceCallbackView, WooCommerceProductsAPIView, 
     BigCommerceAuthRedirectView, BigCommerceCallbackView,
     StoreListCreateView, StoreRetrieveUpdateDestroyView,
     CategoryListCreateView, CategoryRetrieveUpdateDestroyView,
@@ -16,7 +16,9 @@ urlpatterns = [
     path("callback", ShopifyCallbackView.as_view(), name="shopify-callback"),
     path('fetch-products', FetchProductsView.as_view(), name='shopify-products'),
     path('compare', CompareProductsView.as_view(), name='shopify-compare'),
-    # path("woocommerce/connect", WooCommerceAuthView.as_view(), name="woocommerce-connect"),
+    path("woocommerce/connect", WooCommerceAuthView.as_view(), name="woocommerce-connect"),
+    path("woocommerce/callback/", WooCommerceCallbackView.as_view(), name="woocommerce-callback"),
+    path("woocommerce/products/", WooCommerceProductsAPIView.as_view(), name="woocommerce-products"),
     path("bigcommerce/auth", BigCommerceAuthRedirectView.as_view(), name="bigcommerce-auth"),
     path("bigcommerce/callback", BigCommerceCallbackView.as_view(), name="bigcommerce-callback"),
     

@@ -4,12 +4,7 @@ import os
 
 import urllib.parse
 
-from .models import LocalProduct
 
-def get_local_store_products(user):
-    
-    return LocalProduct.objects.filter(store__user=user).values(
-        'id', 'name', 'description', 'price', 'image'
 
 def amazon_products(keyword, page):
 

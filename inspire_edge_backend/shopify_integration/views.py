@@ -7,23 +7,23 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 import requests
 from urllib.parse import quote
+import traceback
 
-from urllib.parse import urlencode
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
-from rest_framework_simplejwt.tokens import AccessToken,RefreshToken
+import os
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
 
-# using fbv
-from rest_framework.decorators import api_view, permission_classes
 
 # woo and big commerce integration
 from shopify_integration.models import *
 from rest_framework import status
-# from WooCommerce import API  # from 'woocommerce' Python package
+# from django.views import View
+from urllib.parse import unquote
 import logging
 logger = logging.getLogger(__name__)
+from requests.auth import HTTPBasicAuth
 
 from rest_framework import generics, permissions, status
 from rest_framework.permissions import AllowAny
@@ -37,7 +37,7 @@ from .serializers import (
     CategorySerializer,
     CustomProductSerializer
 )
-from rest_framework.exceptions import PermissionDenied
+# from rest_framework.exceptions import PermissionDenied
 
 from .utils import amazon_products, connect_to_market_recon
 
@@ -207,56 +207,111 @@ class CompareProductsView(APIView):
 # ==============================
 # WooCommerce Integration
 # ==============================
-
-
 class WooCommerceAuthView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         store_url = request.data.get("store_url")
-
         if not store_url:
-            return Response({"error": "Store URL is required."}, status=400)
+            return Response({"error": "Missing store_url"}, status=status.HTTP_400_BAD_REQUEST)
 
-        callback_url = f"{settings.BASE_URL}/woocommerce/callback/"
+        base_url = os.getenv("WOOCMMERCE_BASE_URL", "http://127.0.0.1:8000")
+        callback_url = f"{base_url}/shopify/woocommerce/callback"
 
-        params = {
-            "app_name": "YourAppName",
-            "scope": "read_write",
-            "user_id": str(request.user.id),
-            "return_url": callback_url,
-            "callback_url": callback_url,
-        }
+        consumer_key = os.getenv("WOOCOMMERCE_CONSUMER_KEY")
+        consumer_secret = os.getenv("WOOCOMMERCE_CONSUMER_SECRET")
 
-        # Build the full URL for authorization
-        auth_url = f"{store_url}/wc-auth/v1/authorize?{urlencode(params)}"
+        if not all([consumer_key, consumer_secret]):
+            return Response({"error": "WooCommerce credentials missing in .env"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({"url": auth_url})
-    
+        # Build the auth URL - your WooCommerce app or integration might differ here
+        params = urlencode({
+            "store_url": store_url,
+            "consumer_key": consumer_key,
+            "consumer_secret": consumer_secret,
+            "callback_url": callback_url
+        })
+
+        # This redirect URL is your callback with params attached (simulate auth flow)
+        redirect_url = f"{callback_url}?{params}"
+
+        return Response({"auth_url": redirect_url}, status=status.HTTP_200_OK)
+
+
 class WooCommerceCallbackView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        store_url = request.GET.get("store_url")
-        consumer_key = request.GET.get("consumer_key")
-        consumer_secret = request.GET.get("consumer_secret")
+        try:
+            store_url = request.query_params.get('store_url')
+            consumer_key = request.query_params.get('consumer_key')
+            consumer_secret = request.query_params.get('consumer_secret')
+            callback_url = request.query_params.get('callback_url')
 
-        if not store_url or not consumer_key or not consumer_secret:
-            return Response({"error": "Missing required parameters"}, status=400)
-
-        WooCommerceStore.objects.update_or_create(
-            store_url=store_url,
-            defaults={
-                "user": request.user,
+            return Response({
+                "message": "WooCommerce callback received.",
+                "store_url": store_url,
                 "consumer_key": consumer_key,
                 "consumer_secret": consumer_secret,
-            },
-        )
+                "callback_url": callback_url
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            # Print full traceback to your terminal or console
+            traceback.print_exc()
 
-        return Response(
-            {"message": "WooCommerce store connected successfully!", "store_url": store_url}
-        )
+            return Response({
+                "status_code": 500,
+                "detail": str(e),  # Return the error message in the response
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
+            
+# class WooCommerceProductsAPIView(APIView):
+#     permission_classes = [AllowAny]
 
+#     def get(self, request):
+#         return Response({"message": "WooCommerce Products API is working"})
+            
+class WooCommerceProductsAPIView(APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        try:
+            store_url = request.query_params.get("store_url")
+            consumer_key = request.query_params.get("consumer_key")
+            consumer_secret = request.query_params.get("consumer_secret")
+
+            if not all([store_url, consumer_key, consumer_secret]):
+                return Response(
+                    {"status_code": 400, "detail": "Missing one or more required parameters."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            response = requests.get(
+                f"{store_url}/wp-json/wc/v3/products",
+                auth=(consumer_key, consumer_secret),
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                return Response(
+                    {"status_code": response.status_code, "detail": "Failed to fetch products."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response({
+                "status_code": 200,
+                "products": response.json()
+            })
+        except Exception as e:
+            return Response({
+                "status_code": 500,
+                "detail": str(e),
+                "trace": traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+   
+    
+    
 # ==============================
 # BigCommerce Integration
 # ==============================
