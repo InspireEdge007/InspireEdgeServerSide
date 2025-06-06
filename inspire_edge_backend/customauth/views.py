@@ -10,7 +10,7 @@ import base64
 from .models import User, Role, UserRole, UserOTP
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer,
-    OTPSerializer, RoleSerializer, UserRoleSerializer, UserSerializer, 
+    OTPSerializer, RoleSerializer, UserRoleSerializer, UserSerializer,
 )
 from .permissions import IsAdmin, HasRolePermission
 from datetime import timedelta
@@ -30,7 +30,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from .serializers import GoogleLoginSerializer
-    
+
 
 class RegisterAPIView(APIView):
 
@@ -54,10 +54,32 @@ class RegisterAPIView(APIView):
                 totp = pyotp.TOTP(otp_secret, interval=3000)
                 otp_code = totp.now()
 
+                # Send email
+                send_mail(
+                    subject="Inspire Edge Password Reset OTP",
+                    message=f"""
+                            Hello {user.first_name or 'there'},
+
+                            You requested a password reset on Inspire Edge.
+
+                            Your OTP code is: {otp_code}
+
+                            This OTP is valid for 5 minutes.
+
+                            If you did not request this, please ignore this email.
+
+                            Thanks,
+                            The Inspire Edge Team
+                            """,
+
+                    from_email="noreply@inspireedge.com",
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
                 return Response({
                     'message': 'User registered successfully. Please verify OTP',
                     'email': user.email,
-                    'otp_code': otp_code  # Remove this in production - only for testing
                 }, status=status.HTTP_201_CREATED)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -90,10 +112,33 @@ class ResendOTPAPIView(APIView):
             # Generate new OTP
             new_otp = user_otp.generate_otp()
 
+            # Send email
+            send_mail(
+                    subject="Inspire Edge Password Reset OTP",
+                    message=f"""
+                            Hello {user.first_name or 'there'},
+
+                            You requested a password reset on Inspire Edge.
+
+                            Your OTP code is: {new_otp}
+
+                            This OTP is valid for 5 minutes.
+
+                            If you did not request this, please ignore this email.
+
+                            Thanks,
+                            The Inspire Edge Team
+                            """,
+
+                    from_email="noreply@inspireedge.com",
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
             # Here, you’d send the OTP via email/SMS
             return Response({
                 'message': 'OTP resent successfully.',
-                'otp_code': new_otp  # Remove in production
+
             }, status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
@@ -127,6 +172,8 @@ class VerifyOTPAPIView(APIView):
                     user_otp.delete()
 
                     refresh = RefreshToken.for_user(user)
+    
+
                     return Response({
                         'message': 'OTP verified successfully',
                         'access': str(refresh.access_token),

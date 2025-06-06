@@ -1,10 +1,7 @@
 
 import requests
 import os
-
 import urllib.parse
-
-from .models import LocalProduct
 
 
 def amazon_products(keyword, page):
