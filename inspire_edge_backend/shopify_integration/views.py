@@ -207,6 +207,7 @@ class CompareProductsView(APIView):
 # ==============================
 # WooCommerce Integration
 # ==============================
+
 class WooCommerceAuthView(APIView):
     permission_classes = [AllowAny]
 
@@ -215,8 +216,13 @@ class WooCommerceAuthView(APIView):
         if not store_url:
             return Response({"error": "Missing store_url"}, status=status.HTTP_400_BAD_REQUEST)
 
-        base_url = os.getenv("WOOCMMERCE_BASE_URL", "http://127.0.0.1:8000")
-        callback_url = f"{base_url}/shopify/woocommerce/callback"
+        # Try to use request's actual host
+        try:
+            callback_url = request.build_absolute_uri("/shopify/woocommerce/callback")
+        except Exception:
+            # fallback if request is missing (very rare)
+            base_url = os.getenv("WOOCOMMERCE_BASE_URL", "http://127.0.0.1:8000")
+            callback_url = f"{base_url}/shopify/woocommerce/callback"
 
         consumer_key = os.getenv("WOOCOMMERCE_CONSUMER_KEY")
         consumer_secret = os.getenv("WOOCOMMERCE_CONSUMER_SECRET")
@@ -224,7 +230,6 @@ class WooCommerceAuthView(APIView):
         if not all([consumer_key, consumer_secret]):
             return Response({"error": "WooCommerce credentials missing in .env"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Build the auth URL - your WooCommerce app or integration might differ here
         params = urlencode({
             "store_url": store_url,
             "consumer_key": consumer_key,
@@ -232,7 +237,6 @@ class WooCommerceAuthView(APIView):
             "callback_url": callback_url
         })
 
-        # This redirect URL is your callback with params attached (simulate auth flow)
         redirect_url = f"{callback_url}?{params}"
 
         return Response({"auth_url": redirect_url}, status=status.HTTP_200_OK)
@@ -262,7 +266,7 @@ class WooCommerceCallbackView(APIView):
 
             return Response({
                 "status_code": 500,
-                "detail": str(e),  # Return the error message in the response
+                "detail": str(e),  
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
        
             
