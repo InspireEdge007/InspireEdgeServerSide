@@ -9,18 +9,16 @@ import requests
 from urllib.parse import quote
 import traceback
 
-
 import os
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from .models import ShopifyStore
 from django.contrib.auth import get_user_model
 
-
 # woo and big commerce integration
 from shopify_integration.models import *
 from rest_framework import status
-# from django.views import View
 from urllib.parse import unquote
+from woocommerce import API
 import logging
 logger = logging.getLogger(__name__)
 from requests.auth import HTTPBasicAuth
@@ -37,7 +35,6 @@ from .serializers import (
     CategorySerializer,
     CustomProductSerializer
 )
-# from rest_framework.exceptions import PermissionDenied
 
 from .utils import amazon_products, connect_to_market_recon
 
@@ -316,6 +313,45 @@ class WooCommerceProductsAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
    
     
+class WooCommerceCompareProductsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        store_url = request.query_params.get("store_url")
+        product_id = request.query_params.get("product_id")
+        consumer_key = request.query_params.get("consumer_key")
+        consumer_secret = request.query_params.get("consumer_secret")
+
+        if not all([store_url, product_id, consumer_key, consumer_secret]):
+            return Response({"error": "Missing required query parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            wcapi = API(
+                url=store_url,
+                consumer_key=consumer_key,
+                consumer_secret=consumer_secret,
+                version="wc/v3"
+            )
+
+            # Fetch WooCommerce product
+            response = wcapi.get(f"products/{product_id}")
+            if response.status_code != 200:
+                return Response({"error": "Product not found in WooCommerce store"}, status=404)
+
+            woocommerce_product = response.json()
+
+            # Quote title for external search
+            woocommerce_title = quote(woocommerce_product.get("name", ""))
+            external_product = amazon_products(woocommerce_title, 1)
+
+            if external_product:
+                Ai_response = connect_to_market_recon(external_product, dict(woocommerce_product))
+                return Response({"message": "Market recommends!", "data": Ai_response}, status=200)
+            else:
+                return Response({"error": "Competitor product with title not found"}, status=400)
+
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=500)
     
 # ==============================
 # BigCommerce Integration

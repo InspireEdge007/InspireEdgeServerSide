@@ -5,7 +5,7 @@ from .views import (
     ShopifyAuthRedirectView, ShopifyCallbackView,
     CompareProductsView, FetchProductsView,
     WooCommerceAuthView, WooCommerceCallbackView, WooCommerceProductsAPIView, 
-    BigCommerceAuthRedirectView, BigCommerceCallbackView,
+    WooCommerceCompareProductsView, BigCommerceAuthRedirectView, BigCommerceCallbackView,
     StoreListCreateView, StoreRetrieveUpdateDestroyView,
     CategoryListCreateView, CategoryRetrieveUpdateDestroyView,
     ProductListCreateView, ProductRetrieveUpdateDestroyView,
@@ -19,6 +19,7 @@ urlpatterns = [
     path("woocommerce/connect", WooCommerceAuthView.as_view(), name="woocommerce-connect"),
     path("woocommerce/callback/", WooCommerceCallbackView.as_view(), name="woocommerce-callback"),
     path("woocommerce/products/", WooCommerceProductsAPIView.as_view(), name="woocommerce-products"),
+    path("woocommerce/compare/", WooCommerceCompareProductsView.as_view(), name="woocommerce-compare"),
     path("bigcommerce/auth", BigCommerceAuthRedirectView.as_view(), name="bigcommerce-auth"),
     path("bigcommerce/callback", BigCommerceCallbackView.as_view(), name="bigcommerce-callback"),
     
