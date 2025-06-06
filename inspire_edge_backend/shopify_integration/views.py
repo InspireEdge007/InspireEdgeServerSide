@@ -216,20 +216,21 @@ class WooCommerceAuthView(APIView):
         if not store_url:
             return Response({"error": "Missing store_url"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Try to use request's actual host
-        try:
-            callback_url = request.build_absolute_uri("/shopify/woocommerce/callback")
-        except Exception:
-            # fallback if request is missing (very rare)
-            base_url = os.getenv("WOOCOMMERCE_BASE_URL", "http://127.0.0.1:8000")
-            callback_url = f"{base_url}/shopify/woocommerce/callback"
+        # Dynamically get domain from the incoming request
+        base_url = os.getenv("WOOCOMMERCE_BASE_URL", request.build_absolute_uri('/').rstrip('/'))
+
+        callback_url = f"{base_url}/shopify/woocommerce/callback"
 
         consumer_key = os.getenv("WOOCOMMERCE_CONSUMER_KEY")
         consumer_secret = os.getenv("WOOCOMMERCE_CONSUMER_SECRET")
 
         if not all([consumer_key, consumer_secret]):
-            return Response({"error": "WooCommerce credentials missing in .env"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "WooCommerce credentials missing in .env"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
+        # Build parameters to simulate auth URL
         params = urlencode({
             "store_url": store_url,
             "consumer_key": consumer_key,
@@ -237,9 +238,9 @@ class WooCommerceAuthView(APIView):
             "callback_url": callback_url
         })
 
-        redirect_url = f"{callback_url}?{params}"
+        auth_url = f"{callback_url}?{params}"
 
-        return Response({"auth_url": redirect_url}, status=status.HTTP_200_OK)
+        return Response({"auth_url": auth_url}, status=status.HTTP_200_OK)
 
 
 class WooCommerceCallbackView(APIView):
